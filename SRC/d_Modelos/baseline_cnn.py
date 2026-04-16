@@ -1,41 +1,81 @@
-# SRC/modelos/baseline_cnn.py
+"""
+Modelo baseline de red neuronal convolucional (CNN) para clasificación de imágenes.
+Implementa una arquitectura simple con 3 bloques Conv2D + MaxPooling.
+Utiliza GlobalAveragePooling para reducir dimensionalidad antes de la capa final.
+Está diseñado para clasificación multiclase con etiquetas enteras (SparseCategorical).
+Se emplea como modelo base para comparar con arquitecturas más complejas.
+"""
 
 import tensorflow as tf
 
-# Opción B (tu elección): import plano "config"
-# Asegúrate de ejecutar con CWD que permita encontrar config.py (en tu caso lo está cargando desde SRC/config.py)
-from config import IMAGEN_SHAPE, NUM_CLASES, TASA_APRENDIZAJE_BASELINE
+from a_Configuracion.config import (
+    IMAGEN_SHAPE,
+    NUM_CLASES,
+    TASA_APRENDIZAJE_BASELINE,
+)
 
 
-def construir_cnn_basico() -> tf.keras.Model:
+def construir_modelo_baseline() -> tf.keras.Model:
     """
-    CNN baseline mínima:
-    Input -> [Conv + MaxPool] x3 -> GAP -> Dense softmax
-    Diseñada para clasificación multiclase con etiquetas int32 (sparse).
+    Construye una CNN básica para clasificación de imágenes.
     """
+
     modelo = tf.keras.Sequential(
         [
             tf.keras.layers.Input(shape=IMAGEN_SHAPE),
 
-            tf.keras.layers.Conv2D(16, 3, padding="same", activation="relu"),
+            tf.keras.layers.Conv2D(
+                16,
+                3,
+                padding="same",
+                activation="relu",
+            ),
             tf.keras.layers.MaxPooling2D(),
 
-            tf.keras.layers.Conv2D(32, 3, padding="same", activation="relu"),
+            tf.keras.layers.Conv2D(
+                32,
+                3,
+                padding="same",
+                activation="relu",
+            ),
             tf.keras.layers.MaxPooling2D(),
 
-            tf.keras.layers.Conv2D(64, 3, padding="same", activation="relu"),
+            tf.keras.layers.Conv2D(
+                64,
+                3,
+                padding="same",
+                activation="relu",
+            ),
             tf.keras.layers.MaxPooling2D(),
 
             tf.keras.layers.GlobalAveragePooling2D(),
-            tf.keras.layers.Dense(NUM_CLASES, activation="softmax"),
+
+            tf.keras.layers.Dense(
+                NUM_CLASES,
+                activation="softmax",
+            ),
         ],
-        name="cnn_baseline_minimo",
+        name="baseline_cnn",
     )
 
     modelo.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=TASA_APRENDIZAJE_BASELINE),
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=TASA_APRENDIZAJE_BASELINE
+        ),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
         metrics=["accuracy"],
     )
 
     return modelo
+
+
+# ==============================
+# Debug rápido
+# ==============================
+if __name__ == "__main__":
+    print("=== DEBUG MODELO BASELINE ===")
+
+    modelo = construir_modelo_baseline()
+    modelo.summary()
+
+    print("\n✅ Modelo construido correctamente.")

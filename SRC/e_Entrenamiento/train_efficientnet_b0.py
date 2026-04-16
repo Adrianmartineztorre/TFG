@@ -17,7 +17,7 @@ from a_Configuracion.config import (
     MODELOS_DIR,
     MONITOR_METRIC,
 )
-from a_Configuracion.utils import (
+from b_Preprocesado.utils import (
     construir_callbacks,
     fijar_seed,
     convertir_a_json_serializable,

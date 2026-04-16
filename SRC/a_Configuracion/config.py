@@ -15,7 +15,7 @@ SEED = 42
 # ==============================
 # Rutas del proyecto
 # ==============================
-RUTA_PROYECTO = Path(__file__).resolve().parents[1]
+RUTA_PROYECTO = Path(__file__).resolve().parents[2]
 
 RUTA_DATA = RUTA_PROYECTO / "DATA"
 RUTA_DATA_RAW = RUTA_DATA / "RAW"
@@ -81,6 +81,13 @@ TASA_APRENDIZAJE_BASELINE = 1e-3
 TASA_APRENDIZAJE_TRANSFER = 1e-4
 
 # ==============================
+# Parámetros específicos cnn_vgg
+# ==============================
+BATCH_SIZE_CNN_VGG = 16
+EPOCHS_CNN_VGG = 40
+TASA_APRENDIZAJE_CNN_VGG = 1e-4
+
+# ==============================
 # Aumento de datos (solo entrenamiento)
 # ==============================
 PARAMETROS_AUMENTO = dict(
@@ -108,10 +115,9 @@ DESV_IMAGEN = [0.229, 0.224, 0.225]
 # ==============================
 MONITOR_METRIC = "val_loss"
 
-EARLY_STOPPING_PATIENCE = 7
+EARLY_STOPPING_PATIENCE = 12
 EARLY_STOPPING_MIN_DELTA = 1e-4
 
-REDUCE_LR_PATIENCE = 3
+REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.3
 MIN_LR = 1e-6
-

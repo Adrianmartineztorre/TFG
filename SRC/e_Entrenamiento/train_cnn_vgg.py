@@ -17,7 +17,7 @@ from a_Configuracion.config import (
     MODELOS_DIR,
     MONITOR_METRIC,
 )
-from a_Configuracion.utils import construir_callbacks, fijar_seed
+from b_Preprocesado.utils import construir_callbacks, fijar_seed
 from c_Data.data import get_tf_datasets
 from d_Modelos.cnn_vgg import construir_modelo_cnn_vgg as construir_modelo
 

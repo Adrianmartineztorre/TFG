@@ -1,14 +1,24 @@
-# SRC/preprocesado.py
+"""
+Módulo de preprocesado de imágenes para el pipeline de entrenamiento.
+Carga imágenes desde disco y las adapta al formato esperado por el modelo.
+Aplica normalización y aumento de datos cuando el modo es entrenamiento.
+Convierte dataframes con rutas y etiquetas en datasets de TensorFlow.
+Se utiliza desde el módulo de datos para construir los tf.data.Dataset.
+"""
 
+from pathlib import Path
+
+import pandas as pd
 import tensorflow as tf
-from config import (
+
+from a_Configuracion.config import (
+    CLAVES_CLASES,
+    DESV_IMAGEN,
+    MEDIA_IMAGEN,
+    PARAMETROS_AUMENTO,
+    REESCALADO,
     SEED,
     TAMANO_IMG,
-    REESCALADO,
-    MEDIA_IMAGEN,
-    DESV_IMAGEN,
-    CLAVES_CLASES,
-    PARAMETROS_AUMENTO,
 )
 
 AUTOTUNE = tf.data.AUTOTUNE
@@ -16,7 +26,8 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 def construir_tabla_etiquetas() -> tf.lookup.StaticHashTable:
     """
-    Tabla: etiqueta (texto) -> id (int32)
+    Construye una tabla hash que transforma etiquetas de texto
+    en identificadores enteros para el entrenamiento.
     """
     claves = tf.constant(CLAVES_CLASES, dtype=tf.string)
     valores = tf.constant(list(range(len(CLAVES_CLASES))), dtype=tf.int32)
@@ -28,6 +39,9 @@ def construir_tabla_etiquetas() -> tf.lookup.StaticHashTable:
 
 
 def construir_aumentador() -> tf.keras.Sequential:
+    """
+    Construye la secuencia de aumento de datos definida en configuración.
+    """
     rotacion_grados = float(PARAMETROS_AUMENTO.get("rotation_range", 0))
     factor_rotacion = rotacion_grados / 180.0
 
@@ -36,7 +50,6 @@ def construir_aumentador() -> tf.keras.Sequential:
 
     zoom = PARAMETROS_AUMENTO.get("zoom_range", 0.0)
     if isinstance(zoom, (list, tuple)) and len(zoom) == 2:
-        # si te pasan (0.9, 1.1) lo convertimos a +/-0.1
         factor_zoom = max(abs(1 - float(zoom[0])), abs(1 - float(zoom[1])))
     else:
         factor_zoom = float(zoom)
@@ -44,10 +57,13 @@ def construir_aumentador() -> tf.keras.Sequential:
     volteo_horizontal = bool(PARAMETROS_AUMENTO.get("horizontal_flip", True))
 
     capas = []
+
     if volteo_horizontal:
         capas.append(tf.keras.layers.RandomFlip("horizontal", seed=SEED))
+
     if factor_rotacion > 0:
         capas.append(tf.keras.layers.RandomRotation(factor_rotacion, seed=SEED))
+
     if factor_zoom > 0:
         capas.append(
             tf.keras.layers.RandomZoom(
@@ -56,7 +72,8 @@ def construir_aumentador() -> tf.keras.Sequential:
                 seed=SEED,
             )
         )
-    if (desplazamiento_horizontal > 0) or (desplazamiento_vertical > 0):
+
+    if desplazamiento_horizontal > 0 or desplazamiento_vertical > 0:
         capas.append(
             tf.keras.layers.RandomTranslation(
                 height_factor=desplazamiento_vertical,
@@ -69,17 +86,23 @@ def construir_aumentador() -> tf.keras.Sequential:
 
 
 def _decodificar_y_redimensionar(ruta: tf.Tensor) -> tf.Tensor:
+    """
+    Lee una imagen desde disco, la decodifica y la redimensiona.
+    """
     bytes_imagen = tf.io.read_file(ruta)
     imagen = tf.io.decode_image(bytes_imagen, channels=3, expand_animations=False)
-    # Evita shapes desconocidas en pipelines tf.data
     imagen.set_shape([None, None, 3])
 
     imagen = tf.image.resize(imagen, TAMANO_IMG, method="bilinear")
     imagen = tf.cast(imagen, tf.float32)
+
     return imagen
 
 
 def _normalizar(imagen: tf.Tensor) -> tf.Tensor:
+    """
+    Reescala y normaliza una imagen usando media y desviación estándar.
+    """
     imagen = imagen * REESCALADO
 
     media = tf.constant(MEDIA_IMAGEN, dtype=tf.float32)
@@ -96,6 +119,9 @@ def preprocesar_ejemplo(
     tabla_etiquetas: tf.lookup.StaticHashTable | None = None,
     aumentador: tf.keras.Sequential | None = None,
 ) -> tuple[tf.Tensor, tf.Tensor]:
+    """
+    Preprocesa una muestra individual compuesta por imagen y etiqueta.
+    """
     imagen = _decodificar_y_redimensionar(ruta)
     imagen = _normalizar(imagen)
 
@@ -107,7 +133,7 @@ def preprocesar_ejemplo(
     if tabla_etiquetas is None:
         tabla_etiquetas = construir_tabla_etiquetas()
 
-    id_etiqueta = tabla_etiquetas.lookup(etiqueta_texto)  # int32
+    id_etiqueta = tabla_etiquetas.lookup(etiqueta_texto)
 
     tf.debugging.assert_greater_equal(
         id_etiqueta,
@@ -119,12 +145,15 @@ def preprocesar_ejemplo(
 
 
 def crear_dataset_tf(
-    df,
+    df: pd.DataFrame,
     batch_size: int,
     entrenamiento: bool = False,
     buffer_barajado: int = 2000,
     usar_cache: bool = False,
-):
+) -> tf.data.Dataset:
+    """
+    Convierte un dataframe con rutas y etiquetas en un dataset de TensorFlow.
+    """
     rutas = df["filepath"].astype(str).values
     etiquetas = df["label"].astype(str).values
 
@@ -141,9 +170,9 @@ def crear_dataset_tf(
     aumentador = construir_aumentador() if entrenamiento else None
 
     dataset = dataset.map(
-        lambda r, e: preprocesar_ejemplo(
-            r,
-            e,
+        lambda ruta, etiqueta: preprocesar_ejemplo(
+            ruta,
+            etiqueta,
             entrenamiento=entrenamiento,
             tabla_etiquetas=tabla_etiquetas,
             aumentador=aumentador,
@@ -158,14 +187,8 @@ def crear_dataset_tf(
     return dataset
 
 
-# ==============================
-# Debug rápido (ejecutar este archivo directamente)
-# ==============================
 if __name__ == "__main__":
-    import os
-    import pandas as pd
-    from pathlib import Path
-    import config as cfg
+    import a_Configuracion.config as cfg
 
     print("\n=== DEBUG PREPROCESADO ===")
     print("CWD:", Path.cwd())
@@ -173,8 +196,6 @@ if __name__ == "__main__":
     print("TAMANO_IMG:", cfg.TAMANO_IMG)
     print("CLAVES_CLASES:", cfg.CLAVES_CLASES)
 
-    # 1) Buscar una imagen dentro del dataset RAW (tú ajustas si tu estructura difiere)
-    # Intentamos en colon y lung
     posibles = []
     for base in [cfg.RUTA_COLON, cfg.RUTA_LUNG]:
         if base.exists():
@@ -183,6 +204,7 @@ if __name__ == "__main__":
             posibles += list(base.rglob("*.png"))
 
     print("Imágenes encontradas:", len(posibles))
+
     if not posibles:
         raise FileNotFoundError(
             f"No encuentro imágenes en {cfg.RUTA_COLON} ni {cfg.RUTA_LUNG}. "
@@ -190,29 +212,25 @@ if __name__ == "__main__":
         )
 
     img_path = str(posibles[0])
-    # Inferir label desde carpeta (si tus carpetas se llaman como CLAVES_CLASES)
     label_guess = Path(img_path).parent.name
 
     print("Ejemplo imagen:", img_path)
     print("Etiqueta inferida:", label_guess)
 
-    # 2) Crear DF de prueba
-    df = pd.DataFrame([{"filepath": img_path, "label": label_guess}])
+    df_prueba = pd.DataFrame([{"filepath": img_path, "label": label_guess}])
 
-    # 3) Probar pipeline sin entrenamiento
     print("\n--- Probando dataset (sin aumento) ---")
-    ds = crear_dataset_tf(df, batch_size=1, entrenamiento=False)
+    ds = crear_dataset_tf(df_prueba, batch_size=1, entrenamiento=False)
 
     for x, y in ds.take(1):
         print("Batch imagen shape:", x.shape, "dtype:", x.dtype)
         print("Batch label:", y.numpy(), "dtype:", y.dtype)
 
-    # 4) Probar pipeline con entrenamiento (aumentos)
     print("\n--- Probando dataset (con aumento) ---")
-    ds2 = crear_dataset_tf(df, batch_size=1, entrenamiento=True)
+    ds_aug = crear_dataset_tf(df_prueba, batch_size=1, entrenamiento=True)
 
-    for x2, y2 in ds2.take(1):
-        print("Batch imagen shape:", x2.shape, "dtype:", x2.dtype)
-        print("Batch label:", y2.numpy(), "dtype:", y2.dtype)
+    for x_aug, y_aug in ds_aug.take(1):
+        print("Batch imagen shape:", x_aug.shape, "dtype:", x_aug.dtype)
+        print("Batch label:", y_aug.numpy(), "dtype:", y_aug.dtype)
 
     print("\n✅ DEBUG OK: preprocesado funciona con este ejemplo.")

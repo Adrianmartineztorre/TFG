@@ -1,6 +1,6 @@
 # SRC/modelos/cnn_bn_dropout.py
 import tensorflow as tf
-from config import IMAGEN_SHAPE, NUM_CLASES, TASA_APRENDIZAJE_BASELINE
+from a_Configuracion.config import IMAGEN_SHAPE, NUM_CLASES, TASA_APRENDIZAJE_BASELINE
 
 
 def construir_modelo() -> tf.keras.Model:
