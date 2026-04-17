@@ -41,13 +41,7 @@ def normalizar_ruta_entorno(path_str: str) -> str:
 
     path_str = path_str.strip()
 
-    # Caso Windows: C:\Users\...
-    if len(path_str) > 2 and path_str[1] == ":" and "\\" in path_str:
-        drive = path_str[0].lower()
-        resto = path_str[2:].replace("\\", "/")
-        return f"/mnt/{drive}{resto}"
-
-    return path_str
+    return str(Path(path_str))
 
 
 def normalizar_dataframe_rutas(df: pd.DataFrame) -> pd.DataFrame:
