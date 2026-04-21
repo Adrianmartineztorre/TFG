@@ -1,4 +1,5 @@
 # SRC/e_Evaluacion/evaluar.py
+
 import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -40,6 +41,7 @@ MODELOS_DISPONIBLES = [
     "cnn_bn_dropout",
     "efficientnet_b0",
     "cnn_vgg",
+    "cnn_vgg_opt",
 ]
 
 NOMBRE_MODELO_ARCHIVO = "model.best.keras"
@@ -412,6 +414,7 @@ def main():
     args = parser.parse_args()
 
     tf.random.set_seed(SEED)
+    np.random.seed(SEED)
 
     nombre_modelo = _elegir_modelo(args.modelo)
     figuras_modelo_dir, metricas_modelo_dir = _asegurar_carpetas_modelo(nombre_modelo)
@@ -423,14 +426,14 @@ def main():
     train_df, val_df, test_df = get_splits(create_if_missing=True)
 
     if args.split == "train":
-        df_eval = train_df
+        df_eval = train_df.copy()
     elif args.split == "val":
-        df_eval = val_df
+        df_eval = val_df.copy()
     else:
-        df_eval = test_df
+        df_eval = test_df.copy()
 
     ds_eval = crear_dataset_tf(
-        df_eval,
+        df=df_eval,
         batch_size=batch_size,
         entrenamiento=False,
         usar_cache=args.cache,
@@ -444,7 +447,7 @@ def main():
     distrib_true = {int(k): int(v) for k, v in zip(unique_true, counts_true)}
     distrib_pred = {int(k): int(v) for k, v in zip(unique_pred, counts_pred)}
 
-    ruta_cm = figuras_modelo_dir / f"matriz_confusion_{nombre_modelo}.png"
+    ruta_cm = figuras_modelo_dir / f"matriz_confusion_{nombre_modelo}_{args.split}.png"
     guardar_matriz_confusion(
         y_true,
         y_pred,
@@ -481,10 +484,22 @@ def main():
             "best_epoch": best_run.get("best_epoch", "N/A"),
             "best_value": best_run.get("best_value", "N/A"),
             "monitor_metric": best_run.get("monitor_metric", "N/A"),
-            "best_epoch_val_loss": best_run.get("best_epoch", "N/A"),
-            "best_val_loss": metrics_run.get("val_loss", "N/A"),
-            "best_epoch_val_acc": best_run.get("best_epoch", "N/A"),
-            "best_val_acc": metrics_run.get("val_accuracy", "N/A"),
+            "best_epoch_val_loss": best_run.get(
+                "best_epoch",
+                info_train.get("best_epoch_val_loss", "N/A")
+            ),
+            "best_val_loss": metrics_run.get(
+                "val_loss",
+                info_train.get("best_val_loss", "N/A")
+            ),
+            "best_epoch_val_acc": best_run.get(
+                "best_epoch",
+                info_train.get("best_epoch_val_acc", "N/A")
+            ),
+            "best_val_acc": metrics_run.get(
+                "val_accuracy",
+                info_train.get("best_val_acc", "N/A")
+            ),
         })
 
     num_params = int(modelo.count_params())
@@ -502,12 +517,35 @@ def main():
         **info_train,
     }
 
-    ruta_tabla = metricas_modelo_dir / f"tabla_metricas_{nombre_modelo}.png"
+    ruta_tabla = metricas_modelo_dir / f"tabla_metricas_{nombre_modelo}_{args.split}.png"
     _tabla_metricas_imagen(
         reporte_dict=reporte_dict,
         accuracy=accuracy,
         info_extra=info_extra,
         ruta_png=ruta_tabla,
+    )
+
+    resumen_json = metricas_modelo_dir / f"metricas_{nombre_modelo}_{args.split}.json"
+    resumen = {
+        "modelo": nombre_modelo,
+        "ruta_modelo": str(model_path),
+        "split": args.split,
+        "batch_size": batch_size,
+        "accuracy": accuracy,
+        "num_muestras": int(len(y_true)),
+        "distribucion_true": distrib_true,
+        "distribucion_pred": distrib_pred,
+        "num_params": num_params,
+        "classification_report": reporte_dict,
+        "history_path": str(path_history) if path_history else None,
+        "best_run_path": str(path_best_run) if path_best_run else None,
+        "matriz_confusion_png": str(ruta_cm),
+        "tabla_metricas_png": str(ruta_tabla),
+        **info_train,
+    }
+    resumen_json.write_text(
+        json.dumps(resumen, indent=2, ensure_ascii=False),
+        encoding="utf-8",
     )
 
     print("\n✅ Evaluación completada")
@@ -519,6 +557,7 @@ def main():
     print(f"🎯 Accuracy: {accuracy:.3f}")
     print(f"🖼️ Matriz de confusión: {ruta_cm}")
     print(f"🧾 Tabla métricas (PNG): {ruta_tabla}")
+    print(f"📄 JSON métricas: {resumen_json}")
 
     if best_run and "best_epoch" in best_run:
         best_value = best_run.get("best_value", "N/A")

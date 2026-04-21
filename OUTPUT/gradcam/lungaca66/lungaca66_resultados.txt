@@ -1,0 +1,10 @@
+=== RESULTADO PREDICCIÓN ===
+Clase predicha: lung_aca
+Bounding box región activa: x=137, y=0, w=50, h=70
+
+Probabilidades por clase:
+  - lung_n: 0.000006
+  - lung_aca: 0.963068
+  - lung_scc: 0.036833
+  - colon_n: 0.000007
+  - colon_aca: 0.000085

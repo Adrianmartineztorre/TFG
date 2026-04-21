@@ -74,8 +74,8 @@ assert abs((TRAIN_SPLIT + VAL_SPLIT + TEST_SPLIT) - 1.0) < 1e-9, "Los splits deb
 # ==============================
 BATCH_SIZE = 32
 
-EPOCHS_BASELINE = 30
-EPOCHS_TRANSFER = 40
+EPOCHS_BASELINE = 20
+EPOCHS_TRANSFER = 20
 
 TASA_APRENDIZAJE_BASELINE = 1e-3
 TASA_APRENDIZAJE_TRANSFER = 1e-4
@@ -84,7 +84,7 @@ TASA_APRENDIZAJE_TRANSFER = 1e-4
 # Parámetros específicos cnn_vgg
 # ==============================
 BATCH_SIZE_CNN_VGG = 16
-EPOCHS_CNN_VGG = 40
+EPOCHS_CNN_VGG = 20
 TASA_APRENDIZAJE_CNN_VGG = 1e-4
 
 # ==============================
@@ -115,7 +115,7 @@ DESV_IMAGEN = [0.229, 0.224, 0.225]
 # ==============================
 MONITOR_METRIC = "val_loss"
 
-EARLY_STOPPING_PATIENCE = 12
+EARLY_STOPPING_PATIENCE = 7
 EARLY_STOPPING_MIN_DELTA = 1e-4
 
 REDUCE_LR_PATIENCE = 4

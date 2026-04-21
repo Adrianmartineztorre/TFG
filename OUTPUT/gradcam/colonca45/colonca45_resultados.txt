@@ -1,0 +1,10 @@
+=== RESULTADO PREDICCIÓN ===
+Clase predicha: colon_aca
+Bounding box región activa: x=18, y=148, w=71, h=76
+
+Probabilidades por clase:
+  - lung_n: 0.000000
+  - lung_aca: 0.000000
+  - lung_scc: 0.000000
+  - colon_n: 0.000628
+  - colon_aca: 0.999371

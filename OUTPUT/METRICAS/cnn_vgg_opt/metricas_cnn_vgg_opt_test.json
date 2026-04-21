@@ -1,0 +1,80 @@
+{
+  "modelo": "cnn_vgg_opt",
+  "ruta_modelo": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\MODELOS\\cnn_vgg_opt\\model.best.keras",
+  "split": "test",
+  "batch_size": 32,
+  "accuracy": 0.976706827309237,
+  "num_muestras": 3735,
+  "distribucion_true": {
+    "0": 748,
+    "1": 743,
+    "2": 739,
+    "3": 748,
+    "4": 757
+  },
+  "distribucion_pred": {
+    "0": 745,
+    "1": 718,
+    "2": 749,
+    "3": 702,
+    "4": 821
+  },
+  "num_params": 1956005,
+  "classification_report": {
+    "lung_n": {
+      "precision": 1.0,
+      "recall": 0.9959893048128342,
+      "f1-score": 0.9979906229068989,
+      "support": 748.0
+    },
+    "lung_aca": {
+      "precision": 0.9902506963788301,
+      "recall": 0.9569313593539704,
+      "f1-score": 0.973305954825462,
+      "support": 743.0
+    },
+    "lung_scc": {
+      "precision": 0.9786381842456608,
+      "recall": 0.9918809201623816,
+      "f1-score": 0.9852150537634409,
+      "support": 739.0
+    },
+    "colon_n": {
+      "precision": 1.0,
+      "recall": 0.9385026737967914,
+      "f1-score": 0.9682758620689655,
+      "support": 748.0
+    },
+    "colon_aca": {
+      "precision": 0.9220462850182704,
+      "recall": 1.0,
+      "f1-score": 0.9594423320659062,
+      "support": 757.0
+    },
+    "accuracy": 0.976706827309237,
+    "macro avg": {
+      "precision": 0.9781870331285523,
+      "recall": 0.9766608516251957,
+      "f1-score": 0.9768459651261348,
+      "support": 3735.0
+    },
+    "weighted avg": {
+      "precision": 0.9780345176240548,
+      "recall": 0.976706827309237,
+      "f1-score": 0.9767886011518979,
+      "support": 3735.0
+    }
+  },
+  "history_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\RUNS\\cnn_vgg_opt\\history.json",
+  "best_run_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\RUNS\\cnn_vgg_opt\\best_run.json",
+  "matriz_confusion_png": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\FIGURAS\\cnn_vgg_opt\\matriz_confusion_cnn_vgg_opt_test.png",
+  "tabla_metricas_png": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\METRICAS\\cnn_vgg_opt\\tabla_metricas_cnn_vgg_opt_test.png",
+  "epochs_ejecutados": 15,
+  "best_epoch_val_loss": 15,
+  "best_val_loss": 0.15843401849269867,
+  "best_epoch_val_acc": 15,
+  "best_val_acc": 0.9775999784469604,
+  "best_epoch": 15,
+  "best_value": 0.15843401849269867,
+  "monitor_metric": "val_loss"
+}

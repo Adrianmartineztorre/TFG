@@ -1,0 +1,39 @@
+{
+  "model_name": "cnn_vgg",
+  "model_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\MODELOS\\cnn_vgg\\model.best.keras",
+  "output_dir": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\Auditacion\\CNN_VGG",
+  "json_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\Auditacion\\CNN_VGG\\auditoria_leakage_overfitting.json",
+  "plot_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\Auditacion\\CNN_VGG\\comparacion_accuracy_splits.png",
+  "n_samples": {
+    "train": 17500,
+    "val": 3750,
+    "test": 3750
+  },
+  "leakage": {
+    "solape_train_val_por_ruta": 0,
+    "solape_train_test_por_ruta": 0,
+    "solape_val_test_por_ruta": 0,
+    "duplicados_exactos_train_val": 305,
+    "duplicados_exactos_train_test": 278,
+    "duplicados_exactos_val_test": 67
+  },
+  "accuracy": {
+    "train": 0.9994285714285714,
+    "val": 0.9994666666666666,
+    "test": 1.0
+  },
+  "overfitting": {
+    "train_val_gap": -3.809523809517046e-05,
+    "train_test_gap": -0.0005714285714285561,
+    "val_test_gap": 0.0005333333333333856,
+    "conclusiones": [
+      "No se observa overfitting fuerte por train/val: gap = -0.0000",
+      "Generalización razonable frente a test: gap = -0.0006",
+      "Val y test son consistentes: gap = 0.0005"
+    ]
+  },
+  "summary": {
+    "possible_data_leakage": true,
+    "possible_overfitting": false
+  }
+}

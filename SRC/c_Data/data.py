@@ -1,217 +1,205 @@
 """
 Módulo de gestión de datos para el pipeline de entrenamiento.
-Construye el dataframe a partir de las carpetas del dataset original.
-Genera divisiones estratificadas de entrenamiento, validación y test.
-Guarda y recupera los splits en formato CSV para reutilizarlos.
-Se utiliza como puente entre la configuración global y el preprocesado.
+
+Responsabilidades:
+- Construir el DataFrame a partir del dataset en disco.
+- Calcular SHA256 para agrupar duplicados exactos.
+- Generar splits train/val/test sin fuga entre duplicados exactos.
+- Guardar y cargar los splits en CSV para reutilizarlos.
+
+IMPORTANTE:
+- La prevención del data leakage real se hace aquí, al crear los splits.
+- Las imágenes idénticas (mismo SHA256) siempre se asignan al mismo split.
+- Este módulo no hace preprocesado TensorFlow; eso vive en preprocess.py.
 """
 
+import hashlib
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from a_Configuracion.config import (
-    BATCH_SIZE,
-    CLAVES_CLASES,
+    SEED,
     RUTA_COLON,
     RUTA_LUNG,
     RUTA_SPLITS,
-    SEED,
-    TEST_SPLIT,
     TRAIN_SPLIT,
     VAL_SPLIT,
+    TEST_SPLIT,
+    CLAVES_CLASES,
 )
-from b_Preprocesado.preprocess import crear_dataset_tf
 
 
 EXTENSIONES_VALIDAS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp"}
 
 
-def normalizar_ruta_entorno(path_str: str) -> str:
+def _sha256_archivo(path: str, chunk_size: int = 1024 * 1024) -> str:
     """
-    Normaliza rutas para que funcionen en el entorno actual.
-
-    - Si recibe una ruta de Windows tipo C:\\Users\\... y estamos en WSL/Linux,
-      la convierte a /mnt/c/Users/...
-    - Si ya viene en formato Linux/WSL, la deja como está.
+    Calcula el hash SHA256 del contenido de un archivo.
     """
-    if not isinstance(path_str, str):
-        return path_str
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
 
-    path_str = path_str.strip()
 
-    return str(Path(path_str))
-
-
-def normalizar_dataframe_rutas(df: pd.DataFrame) -> pd.DataFrame:
+def _normalizar_ruta_entorno(path_str: str) -> str:
     """
-    Aplica la normalización de rutas a la columna filepath.
+    Normaliza la ruta para el entorno actual.
     """
-    df = df.copy()
-    if "filepath" not in df.columns:
-        raise KeyError("El dataframe no contiene la columna 'filepath'.")
-    df["filepath"] = df["filepath"].apply(normalizar_ruta_entorno)
-    return df
+    return str(Path(path_str).resolve())
+
+
+def _buscar_imagenes_en_clase(base_dir: Path, clase: str) -> list[str]:
+    """
+    Busca imágenes válidas dentro de la carpeta de una clase.
+    """
+    class_dir = base_dir / clase
+    if not class_dir.exists():
+        return []
+
+    rutas = []
+    for p in class_dir.rglob("*"):
+        if p.is_file() and p.suffix.lower() in EXTENSIONES_VALIDAS:
+            rutas.append(str(p.resolve()))
+    return rutas
 
 
 def construir_dataframe() -> pd.DataFrame:
+    """
+    Construye un DataFrame con filepath, label y sha256 a partir del dataset.
+    """
     registros = []
-    mapeo_carpetas = {}
 
     for clase in CLAVES_CLASES:
-        if clase.startswith("lung_"):
-            mapeo_carpetas[clase] = RUTA_LUNG / clase
-        elif clase.startswith("colon_"):
-            mapeo_carpetas[clase] = RUTA_COLON / clase
+        if clase.startswith("colon_"):
+            rutas = _buscar_imagenes_en_clase(RUTA_COLON, clase)
+        elif clase.startswith("lung_"):
+            rutas = _buscar_imagenes_en_clase(RUTA_LUNG, clase)
         else:
-            raise ValueError(f"No se reconoce el prefijo de la clase: {clase}")
+            rutas = []
 
-    for clase, carpeta in mapeo_carpetas.items():
-        if not carpeta.exists():
-            raise FileNotFoundError(
-                f"No existe la carpeta para la clase '{clase}': {carpeta}"
+        for ruta in rutas:
+            registros.append(
+                {
+                    "filepath": _normalizar_ruta_entorno(ruta),
+                    "label": clase,
+                }
             )
-
-        for ruta_imagen in carpeta.rglob("*"):
-            if ruta_imagen.is_file() and ruta_imagen.suffix.lower() in EXTENSIONES_VALIDAS:
-                registros.append(
-                    {
-                        "filepath": str(ruta_imagen.resolve()),
-                        "label": clase,
-                    }
-                )
 
     df = pd.DataFrame(registros)
 
     if df.empty:
-        raise RuntimeError("No se encontraron imágenes válidas en las carpetas del dataset.")
+        raise FileNotFoundError(
+            "No se encontraron imágenes al construir el dataframe. "
+            "Revisa las rutas del dataset en config.py."
+        )
 
-    df = normalizar_dataframe_rutas(df)
+    print(f"✅ Imágenes encontradas: {len(df)}")
+
+    print("🔍 Calculando SHA256 para agrupar duplicados exactos...")
+    df["sha256"] = df["filepath"].apply(_sha256_archivo)
+
     return df
 
 
-def crear_splits_estratificados(
+def _asignar_split_por_hash(
     df: pd.DataFrame,
-    train_ratio: float,
-    val_ratio: float,
-    test_ratio: float,
-    seed: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    if abs((train_ratio + val_ratio + test_ratio) - 1.0) > 1e-9:
-        raise ValueError("Los ratios de train, val y test deben sumar 1.0.")
-
-    rng = np.random.default_rng(seed)
-    train_idx, val_idx, test_idx = [], [], []
-
-    for _, grupo in df.groupby("label"):
-        indices = grupo.index.to_numpy()
-        rng.shuffle(indices)
-
-        n_total = len(indices)
-        n_train = int(n_total * train_ratio)
-        n_val = int(n_total * val_ratio)
-
-        train_idx.extend(indices[:n_train])
-        val_idx.extend(indices[n_train:n_train + n_val])
-        test_idx.extend(indices[n_train + n_val:])
-
-    train_df = df.loc[train_idx].sample(frac=1, random_state=seed).reset_index(drop=True)
-    val_df = df.loc[val_idx].sample(frac=1, random_state=seed).reset_index(drop=True)
-    test_df = df.loc[test_idx].sample(frac=1, random_state=seed).reset_index(drop=True)
-
-    return train_df, val_df, test_df
-
-
-def verificar_fuga_datos(
-    train_df: pd.DataFrame,
-    val_df: pd.DataFrame,
-    test_df: pd.DataFrame,
-) -> None:
-    train_paths = set(train_df["filepath"])
-    val_paths = set(val_df["filepath"])
-    test_paths = set(test_df["filepath"])
-
-    if (
-        not train_paths.isdisjoint(val_paths)
-        or not train_paths.isdisjoint(test_paths)
-        or not val_paths.isdisjoint(test_paths)
-    ):
-        raise ValueError("Fuga de datos detectada entre los splits.")
-
-
-def verificar_existencia_archivos(df: pd.DataFrame, nombre_split: str) -> None:
     """
-    Comprueba que todos los filepaths del split existan en disco.
+    Hace el split por grupos de SHA256, para que imágenes idénticas
+    nunca queden repartidas entre train/val/test.
     """
-    inexistentes = [p for p in df["filepath"] if not Path(p).exists()]
+    if "sha256" not in df.columns:
+        raise ValueError("El DataFrame debe contener la columna 'sha256'.")
 
-    if inexistentes:
-        ejemplo = inexistentes[0]
-        raise FileNotFoundError(
-            f"Se han encontrado {len(inexistentes)} rutas inexistentes en el split '{nombre_split}'.\n"
-            f"Ejemplo: {ejemplo}"
+    grupos = (
+        df.groupby("sha256", as_index=False)
+        .agg(
+            label=("label", "first"),
+            n_copias=("filepath", "count"),
         )
-
-
-def guardar_splits(
-    train_df: pd.DataFrame,
-    val_df: pd.DataFrame,
-    test_df: pd.DataFrame,
-    out_dir: Path = RUTA_SPLITS,
-) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    train_df = normalizar_dataframe_rutas(train_df)
-    val_df = normalizar_dataframe_rutas(val_df)
-    test_df = normalizar_dataframe_rutas(test_df)
-
-    train_df.to_csv(out_dir / "train.csv", index=False)
-    val_df.to_csv(out_dir / "val.csv", index=False)
-    test_df.to_csv(out_dir / "test.csv", index=False)
-
-
-def cargar_splits(
-    splits_dir: Path = RUTA_SPLITS,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    train_csv = splits_dir / "train.csv"
-    val_csv = splits_dir / "val.csv"
-    test_csv = splits_dir / "test.csv"
-
-    if not (train_csv.exists() and val_csv.exists() and test_csv.exists()):
-        raise FileNotFoundError("No existen todos los archivos CSV de splits.")
-
-    train_df = pd.read_csv(train_csv)
-    val_df = pd.read_csv(val_csv)
-    test_df = pd.read_csv(test_csv)
-
-    train_df = normalizar_dataframe_rutas(train_df)
-    val_df = normalizar_dataframe_rutas(val_df)
-    test_df = normalizar_dataframe_rutas(test_df)
-
-    return train_df, val_df, test_df
-
-
-def crear_splits(
-    df: pd.DataFrame | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    if df is None:
-        df = construir_dataframe()
-
-    train_df, val_df, test_df = crear_splits_estratificados(
-        df=df,
-        train_ratio=TRAIN_SPLIT,
-        val_ratio=VAL_SPLIT,
-        test_ratio=TEST_SPLIT,
-        seed=SEED,
     )
 
-    verificar_fuga_datos(train_df, val_df, test_df)
-    verificar_existencia_archivos(train_df, "train")
-    verificar_existencia_archivos(val_df, "val")
-    verificar_existencia_archivos(test_df, "test")
+    train_hashes, temp_hashes = train_test_split(
+        grupos,
+        test_size=(1.0 - TRAIN_SPLIT),
+        random_state=SEED,
+        stratify=grupos["label"],
+    )
 
-    guardar_splits(train_df, val_df, test_df)
+    proporcion_test_relativa = TEST_SPLIT / (VAL_SPLIT + TEST_SPLIT)
+
+    val_hashes, test_hashes = train_test_split(
+        temp_hashes,
+        test_size=proporcion_test_relativa,
+        random_state=SEED,
+        stratify=temp_hashes["label"],
+    )
+
+    train_sha = set(train_hashes["sha256"].tolist())
+    val_sha = set(val_hashes["sha256"].tolist())
+    test_sha = set(test_hashes["sha256"].tolist())
+
+    train_df = df[df["sha256"].isin(train_sha)].copy()
+    val_df = df[df["sha256"].isin(val_sha)].copy()
+    test_df = df[df["sha256"].isin(test_sha)].copy()
+
+    train_df = train_df.sample(frac=1, random_state=SEED).reset_index(drop=True)
+    val_df = val_df.sample(frac=1, random_state=SEED).reset_index(drop=True)
+    test_df = test_df.sample(frac=1, random_state=SEED).reset_index(drop=True)
+
+    return train_df, val_df, test_df
+
+
+def _verificar_sin_fuga(
+    train_df: pd.DataFrame,
+    val_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+) -> None:
+    """
+    Verifica que no haya hashes compartidos entre splits.
+    """
+    train_hashes = set(train_df["sha256"].tolist())
+    val_hashes = set(val_df["sha256"].tolist())
+    test_hashes = set(test_df["sha256"].tolist())
+
+    assert train_hashes.isdisjoint(val_hashes), "Hay hashes compartidos entre train y val"
+    assert train_hashes.isdisjoint(test_hashes), "Hay hashes compartidos entre train y test"
+    assert val_hashes.isdisjoint(test_hashes), "Hay hashes compartidos entre val y test"
+
+
+def crear_y_guardar_splits() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Construye el dataframe completo y genera splits sin data leakage
+    entre duplicados exactos.
+    """
+    RUTA_SPLITS.mkdir(parents=True, exist_ok=True)
+
+    df = construir_dataframe()
+    train_df, val_df, test_df = _asignar_split_por_hash(df)
+
+    _verificar_sin_fuga(train_df, val_df, test_df)
+
+    train_path = RUTA_SPLITS / "train.csv"
+    val_path = RUTA_SPLITS / "val.csv"
+    test_path = RUTA_SPLITS / "test.csv"
+
+    train_df.to_csv(train_path, index=False, encoding="utf-8")
+    val_df.to_csv(val_path, index=False, encoding="utf-8")
+    test_df.to_csv(test_path, index=False, encoding="utf-8")
+
+    print("\n✅ Splits generados sin fuga entre duplicados exactos")
+    print(f"Train: {len(train_df)} imágenes | {train_df['sha256'].nunique()} hashes únicos")
+    print(f"Val:   {len(val_df)} imágenes | {val_df['sha256'].nunique()} hashes únicos")
+    print(f"Test:  {len(test_df)} imágenes | {test_df['sha256'].nunique()} hashes únicos")
+
+    print(f"\n💾 Guardado en: {RUTA_SPLITS}")
 
     return train_df, val_df, test_df
 
@@ -219,71 +207,31 @@ def crear_splits(
 def get_splits(
     create_if_missing: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    try:
-        train_df, val_df, test_df = cargar_splits()
+    """
+    Carga los splits desde disco. Si no existen, los genera.
+    """
+    train_path = RUTA_SPLITS / "train.csv"
+    val_path = RUTA_SPLITS / "val.csv"
+    test_path = RUTA_SPLITS / "test.csv"
 
-        # Validar que no haya rutas rotas en los splits cargados
-        verificar_existencia_archivos(train_df, "train")
-        verificar_existencia_archivos(val_df, "val")
-        verificar_existencia_archivos(test_df, "test")
-
-        return train_df, val_df, test_df
-
-    except (FileNotFoundError, OSError):
+    if not (train_path.exists() and val_path.exists() and test_path.exists()):
         if not create_if_missing:
-            raise
-        return crear_splits()
+            raise FileNotFoundError("No existen los CSV de splits.")
+        return crear_y_guardar_splits()
 
+    train_df = pd.read_csv(train_path)
+    val_df = pd.read_csv(val_path)
+    test_df = pd.read_csv(test_path)
 
-def get_tf_datasets(
-    batch_size: int = BATCH_SIZE,
-    cache: bool = False,
-):
-    train_df, val_df, test_df = get_splits()
+    _verificar_sin_fuga(train_df, val_df, test_df)
 
-    train_ds = crear_dataset_tf(
-        train_df,
-        batch_size=batch_size,
-        entrenamiento=True,
-        usar_cache=cache,
-    )
-    val_ds = crear_dataset_tf(
-        val_df,
-        batch_size=batch_size,
-        entrenamiento=False,
-        usar_cache=cache,
-    )
-    test_ds = crear_dataset_tf(
-        test_df,
-        batch_size=batch_size,
-        entrenamiento=False,
-        usar_cache=cache,
-    )
-
-    return train_ds, val_ds, test_ds, train_df, val_df, test_df
-
-
-def main():
-    print("=== DEBUG DATA: INICIO ===")
-    print(f"RUTA_COLON: {RUTA_COLON}")
-    print(f"RUTA_LUNG: {RUTA_LUNG}")
-    print(f"RUTA_SPLITS: {RUTA_SPLITS}")
-
-    print("\n📦 Generando o cargando splits...")
-    train_df, val_df, test_df = get_splits(create_if_missing=True)
-
-    print("\n✅ Splits listos")
-    print(f"Train: {len(train_df)}")
-    print(f"Val:   {len(val_df)}")
-    print(f"Test:  {len(test_df)}")
-
-    print("\n🔎 Ejemplos de rutas:")
-    print(f"Train ejemplo: {train_df['filepath'].iloc[0]}")
-    print(f"Val ejemplo:   {val_df['filepath'].iloc[0]}")
-    print(f"Test ejemplo:  {test_df['filepath'].iloc[0]}")
-
-    print("=== DEBUG DATA: FIN ===")
+    return train_df, val_df, test_df
 
 
 if __name__ == "__main__":
-    main()
+    train_df, val_df, test_df = crear_y_guardar_splits()
+
+    print("\n=== RESUMEN ===")
+    print(train_df.head())
+    print(val_df.head())
+    print(test_df.head())

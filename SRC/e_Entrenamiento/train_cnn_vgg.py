@@ -11,14 +11,14 @@ import json
 import numpy as np
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     BATCH_SIZE_CNN_VGG,
     EPOCHS_CNN_VGG,
     MODELOS_DIR,
     MONITOR_METRIC,
 )
-from b_Preprocesado.utils import construir_callbacks, fijar_seed
-from c_Data.data import get_tf_datasets
+from a_Configuracion.utils import construir_callbacks, fijar_seed
+from c_Data.data_antiguo import get_tf_datasets
 from d_Modelos.cnn_vgg import construir_modelo_cnn_vgg as construir_modelo
 
 

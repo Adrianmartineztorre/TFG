@@ -1,9 +1,15 @@
 """
 Módulo de preprocesado de imágenes para el pipeline de entrenamiento.
-Carga imágenes desde disco y las adapta al formato esperado por el modelo.
-Aplica normalización y aumento de datos cuando el modo es entrenamiento.
-Convierte dataframes con rutas y etiquetas en datasets de TensorFlow.
-Se utiliza desde el módulo de datos para construir los tf.data.Dataset.
+
+Responsabilidades:
+- Cargar imágenes desde disco y adaptarlas al formato esperado por el modelo.
+- Aplicar normalización y aumento de datos cuando el modo es entrenamiento.
+- Convertir dataframes con rutas y etiquetas en datasets de TensorFlow.
+
+IMPORTANTE:
+- Este módulo no corrige por sí solo el data leakage entre train/val/test.
+- La fuga real debe corregirse al generar los splits en data.py.
+- Aquí solo se eliminan duplicados internos dentro del dataframe recibido.
 """
 
 from pathlib import Path
@@ -85,6 +91,46 @@ def construir_aumentador() -> tf.keras.Sequential:
     return tf.keras.Sequential(capas, name="aumentador")
 
 
+def _validar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Valida que el dataframe tenga las columnas necesarias y
+    elimina filas inválidas o duplicadas internas.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("crear_dataset_tf espera un pd.DataFrame.")
+
+    columnas_requeridas = {"filepath", "label"}
+    faltantes = columnas_requeridas - set(df.columns)
+    if faltantes:
+        raise ValueError(
+            f"Faltan columnas obligatorias en el DataFrame: {sorted(faltantes)}. "
+            f"Columnas disponibles: {list(df.columns)}"
+        )
+
+    df = df.copy()
+
+    df["filepath"] = df["filepath"].astype(str).str.strip()
+    df["label"] = df["label"].astype(str).str.strip()
+
+    df = df[(df["filepath"] != "") & (df["label"] != "")]
+    df = df.dropna(subset=["filepath", "label"])
+
+    # Solo elimina duplicados internos exactos del dataframe recibido
+    df = df.drop_duplicates(subset=["filepath", "label"]).reset_index(drop=True)
+
+    if df.empty:
+        raise ValueError("El DataFrame quedó vacío tras la validación.")
+
+    etiquetas_invalidas = sorted(set(df["label"]) - set(CLAVES_CLASES))
+    if etiquetas_invalidas:
+        raise ValueError(
+            "Se encontraron etiquetas no válidas en el DataFrame: "
+            f"{etiquetas_invalidas}. CLAVES_CLASES válidas: {CLAVES_CLASES}"
+        )
+
+    return df
+
+
 def _decodificar_y_redimensionar(ruta: tf.Tensor) -> tf.Tensor:
     """
     Lee una imagen desde disco, la decodifica y la redimensiona.
@@ -153,7 +199,13 @@ def crear_dataset_tf(
 ) -> tf.data.Dataset:
     """
     Convierte un dataframe con rutas y etiquetas en un dataset de TensorFlow.
+
+    IMPORTANTE:
+    - Este método solo limpia duplicados internos del dataframe recibido.
+    - No evita data leakage entre splits distintos.
     """
+    df = _validar_dataframe(df)
+
     rutas = df["filepath"].astype(str).values
     etiquetas = df["label"].astype(str).values
 
@@ -161,7 +213,7 @@ def crear_dataset_tf(
 
     if entrenamiento:
         dataset = dataset.shuffle(
-            buffer_size=buffer_barajado,
+            buffer_size=min(buffer_barajado, len(df)),
             seed=SEED,
             reshuffle_each_iteration=True,
         )

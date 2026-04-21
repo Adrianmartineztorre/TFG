@@ -1,0 +1,16 @@
+{
+  "monitor_metric": "val_loss",
+  "mode": "min",
+  "best_epoch": 38,
+  "best_value": 0.002386222593486309,
+  "metrics": {
+    "accuracy": 0.9986857175827026,
+    "loss": 0.005329969804733992,
+    "val_accuracy": 0.9994666576385498,
+    "val_loss": 0.002386222593486309,
+    "learning_rate": 9.999999974752427e-07
+  },
+  "epochs_ejecutados": 40,
+  "model_name": "cnn_vgg",
+  "model_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\MODELOS\\cnn_vgg\\model.best.keras"
+}

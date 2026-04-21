@@ -1,0 +1,16 @@
+{
+  "monitor_metric": "val_loss",
+  "mode": "min",
+  "best_epoch": 30,
+  "best_value": 0.07603444159030914,
+  "metrics": {
+    "accuracy": 0.9744571447372437,
+    "loss": 0.06689789146184921,
+    "val_accuracy": 0.9688000082969666,
+    "val_loss": 0.07603444159030914,
+    "learning_rate": 0.0010000000474974513
+  },
+  "epochs_ejecutados": 30,
+  "model_name": "baseline_cnn",
+  "model_path": "C:\\Users\\34655\\Desktop\\TFG\\TFG\\OUTPUT\\MODELOS\\baseline_cnn\\model.best.keras"
+}
