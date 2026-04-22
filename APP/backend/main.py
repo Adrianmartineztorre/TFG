@@ -96,3 +96,40 @@ def analizar_imagen(req: ImagenRequest):
             "panel": f"/resultados/{Path(resultado_gradcam['rutas']['panel']).name}",
         },
     }
+
+
+# =========================================================
+# ROOT (para evitar Not Found)
+# =========================================================
+@app.get("/")
+def inicio():
+    return {
+        "mensaje": "API funcionando",
+        "prueba": "Ir a /docs o /test"
+    }
+
+
+# =========================================================
+# TEST RÁPIDO (usa la primera imagen disponible)
+# =========================================================
+@app.get("/test")
+def test_rapido():
+    imagenes = [
+        f.name
+        for f in IMAGENES_ENTRADA_DIR.iterdir()
+        if f.is_file()
+    ]
+
+    if not imagenes:
+        raise HTTPException(status_code=404, detail="No hay imágenes en imagenes_entrada")
+
+    nombre = sorted(imagenes)[0]
+    return analizar_imagen(ImagenRequest(nombre_imagen=nombre))
+
+
+# =========================================================
+# TEST CON NOMBRE DIRECTO
+# =========================================================
+@app.get("/test/{nombre_imagen}")
+def test_imagen(nombre_imagen: str):
+    return analizar_imagen(ImagenRequest(nombre_imagen=nombre_imagen))

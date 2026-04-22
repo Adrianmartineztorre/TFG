@@ -72,14 +72,19 @@ MAX_RESULTADOS = 3
 # MAPEO A IMÁGENES ANATÓMICAS
 # =========================================================
 MAPA_ANATOMIA = {
-    "colon_aca": "colon_on.png",
-    "colon_n": "colon_on.png",
-    "lung_aca": "lung_on.png",
-    "lung_scc": "lung_on.png",
-    "lung_n": "lung_on.png",
+    # COLON
+    "colon_aca": "colon_coloreado.png",   # cáncer
+    "colon_n": "pulmon_colon_grises",    # benigno
+
+    # PULMÓN
+    "lung_aca": "pulmon_coloreado.png",     # cáncer
+    "lung_scc": "pulmon_coloreado.png",     # cáncer
+    "lung_n": "pulmon_colon_grises",      # benigno
 }
 
-ANATOMIA_DEFAULT = "base.png"
+ANATOMIA_DEFAULT = "pulmon_colon_grises"
+
+
 
 # =========================================================
 # EXTENSIONES PERMITIDAS
