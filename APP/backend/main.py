@@ -1,14 +1,16 @@
-from pathlib import Path
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from config_app import (
-    ANATOMIA_DIR,
+    ARCHIVOS_EXCLUIDOS,
+    ASSETS_DIR,
+    EXTENSIONES_VALIDAS,
+    FRONTEND_DIR,
     IMAGENES_ENTRADA_DIR,
-    MAPA_ANATOMIA,
+    RESULTADOS_DIR,
 )
 from predict import predecir_imagen
 from gradcam_app import generar_gradcam_app
@@ -17,7 +19,7 @@ from gradcam_app import generar_gradcam_app
 app = FastAPI()
 
 # =========================================================
-# CORS (para frontend)
+# CORS
 # =========================================================
 app.add_middleware(
     CORSMiddleware,
@@ -28,11 +30,16 @@ app.add_middleware(
 )
 
 # =========================================================
-# SERVIR ARCHIVOS ESTÁTICOS
+# ARCHIVOS ESTÁTICOS
 # =========================================================
-app.mount("/anatomia", StaticFiles(directory=ANATOMIA_DIR), name="anatomia")
-app.mount("/imagenes", StaticFiles(directory=IMAGENES_ENTRADA_DIR), name="imagenes")
-app.mount("/resultados", StaticFiles(directory="resultados"), name="resultados")
+app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR), name="frontend")
+app.mount(
+    "/static/imagenes_entrada",
+    StaticFiles(directory=IMAGENES_ENTRADA_DIR),
+    name="imagenes_entrada",
+)
+app.mount("/static/resultados", StaticFiles(directory=RESULTADOS_DIR), name="resultados")
+app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
 
 # =========================================================
@@ -43,19 +50,58 @@ class ImagenRequest(BaseModel):
 
 
 # =========================================================
-# ENDPOINT: LISTAR IMÁGENES (máx 5)
+# HELPERS
 # =========================================================
-@app.get("/imagenes")
-def listar_imagenes():
+def obtener_imagenes_validas() -> list[str]:
     imagenes = [
         f.name
         for f in IMAGENES_ENTRADA_DIR.iterdir()
         if f.is_file()
+        and f.suffix.lower() in EXTENSIONES_VALIDAS
+        and f.name not in ARCHIVOS_EXCLUIDOS
     ]
 
-    imagenes = sorted(imagenes)[:5]
+    return sorted(imagenes)[:5]
 
-    return {"imagenes": imagenes}
+
+# =========================================================
+# ROOT: ABRE LA WEB DIRECTAMENTE
+# =========================================================
+@app.get("/")
+def inicio():
+    ruta_index = FRONTEND_DIR / "index.html"
+
+    if not ruta_index.exists():
+        raise HTTPException(status_code=404, detail="No se encontró frontend/index.html")
+
+    return FileResponse(ruta_index)
+
+
+# =========================================================
+# FAVICON
+# =========================================================
+@app.get("/favicon.ico")
+def favicon():
+    ruta_favicon = ASSETS_DIR / "flavicon.png"
+
+    if not ruta_favicon.exists():
+        raise HTTPException(status_code=404, detail="No se encontró assets/flavicon.png")
+
+    return FileResponse(ruta_favicon)
+
+
+# =========================================================
+# ENDPOINT: LISTAR IMÁGENES DISPONIBLES (máx 5)
+# =========================================================
+@app.get("/imagenes_disponibles")
+def listar_imagenes():
+    imagenes = obtener_imagenes_validas()
+
+    return {
+        "carpeta": str(IMAGENES_ENTRADA_DIR),
+        "total": len(imagenes),
+        "imagenes": imagenes,
+    }
 
 
 # =========================================================
@@ -66,64 +112,51 @@ def analizar_imagen(req: ImagenRequest):
     ruta_imagen = IMAGENES_ENTRADA_DIR / req.nombre_imagen
 
     if not ruta_imagen.exists():
-        raise HTTPException(status_code=404, detail="Imagen no encontrada")
+        raise HTTPException(status_code=404, detail=f"Imagen no encontrada: {req.nombre_imagen}")
 
-    # 🔹 1. Predicción
+    if req.nombre_imagen in ARCHIVOS_EXCLUIDOS:
+        raise HTTPException(status_code=400, detail="Ese archivo no es una muestra válida")
+
+    if ruta_imagen.suffix.lower() not in EXTENSIONES_VALIDAS:
+        raise HTTPException(status_code=400, detail="Formato de imagen no permitido")
+
     resultado_pred = predecir_imagen(ruta_imagen)
 
-    # 🔹 2. Grad-CAM (usando índice de predicción)
     resultado_gradcam = generar_gradcam_app(
         ruta_imagen,
         class_index=resultado_pred["prediccion_indice"],
     )
 
-    # 🔹 3. Imagen anatómica
-    clave = resultado_pred["prediccion_clave"]
-    nombre_anatomia = MAPA_ANATOMIA.get(clave, "base.png")
+    nombre_base = ruta_imagen.stem
 
     return {
         "imagen": req.nombre_imagen,
+        "ruta_imagen": f"/static/imagenes_entrada/{req.nombre_imagen}",
         "prediccion": resultado_pred["prediccion"],
         "prediccion_clave": resultado_pred["prediccion_clave"],
         "porcentaje_prediccion": resultado_pred["porcentaje_prediccion"],
         "distribucion": resultado_pred["distribucion"],
-        "imagen_anatomica": f"/anatomia/{nombre_anatomia}",
         "gradcam": {
-            "original": f"/resultados/{Path(resultado_gradcam['rutas']['original']).name}",
-            "gradcam": f"/resultados/{Path(resultado_gradcam['rutas']['gradcam']).name}",
-            "bbox": f"/resultados/{Path(resultado_gradcam['rutas']['bbox']).name}",
-            "contorno": f"/resultados/{Path(resultado_gradcam['rutas']['contorno']).name}",
-            "panel": f"/resultados/{Path(resultado_gradcam['rutas']['panel']).name}",
+            "original": f"/static/resultados/gradcam/{nombre_base}/{nombre_base}_original.png",
+            "gradcam": f"/static/resultados/gradcam/{nombre_base}/{nombre_base}_gradcam.png",
+            "bbox": f"/static/resultados/gradcam/{nombre_base}/{nombre_base}_gradcam_bbox.png",
+            "contorno": f"/static/resultados/gradcam/{nombre_base}/{nombre_base}_gradcam_contorno.png",
+            "panel": f"/static/resultados/gradcam/{nombre_base}/{nombre_base}_panel_4imagenes.png",
         },
     }
 
 
 # =========================================================
-# ROOT (para evitar Not Found)
-# =========================================================
-@app.get("/")
-def inicio():
-    return {
-        "mensaje": "API funcionando",
-        "prueba": "Ir a /docs o /test"
-    }
-
-
-# =========================================================
-# TEST RÁPIDO (usa la primera imagen disponible)
+# TEST RÁPIDO
 # =========================================================
 @app.get("/test")
 def test_rapido():
-    imagenes = [
-        f.name
-        for f in IMAGENES_ENTRADA_DIR.iterdir()
-        if f.is_file()
-    ]
+    imagenes = obtener_imagenes_validas()
 
     if not imagenes:
-        raise HTTPException(status_code=404, detail="No hay imágenes en imagenes_entrada")
+        raise HTTPException(status_code=404, detail="No hay imágenes válidas en imagenes_entrada")
 
-    nombre = sorted(imagenes)[0]
+    nombre = imagenes[0]
     return analizar_imagen(ImagenRequest(nombre_imagen=nombre))
 
 

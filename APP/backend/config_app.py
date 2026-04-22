@@ -4,12 +4,13 @@ from pathlib import Path
 # RUTAS DE LA APP
 # =========================================================
 BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
 MODELO_DIR = BASE_DIR / "modelo"
 IMAGENES_ENTRADA_DIR = BASE_DIR / "imagenes_entrada"
-ANATOMIA_DIR = BASE_DIR / "anatomia"
 RESULTADOS_DIR = BASE_DIR / "resultados"
 GRADCAM_DIR = RESULTADOS_DIR / "gradcam"
+ASSETS_DIR = BASE_DIR / "assets"   # ✅ NUEVO (favicon y futuros recursos)
 
 MODELO_PATH = MODELO_DIR / "model.best.keras"
 
@@ -17,9 +18,9 @@ MODELO_PATH = MODELO_DIR / "model.best.keras"
 for carpeta in [
     MODELO_DIR,
     IMAGENES_ENTRADA_DIR,
-    ANATOMIA_DIR,
     RESULTADOS_DIR,
     GRADCAM_DIR,
+    ASSETS_DIR,   # ✅ NUEVO
 ]:
     carpeta.mkdir(parents=True, exist_ok=True)
 
@@ -36,7 +37,6 @@ CLASES = {
 
 CLAVES_CLASES = ["lung_n", "lung_aca", "lung_scc", "colon_n", "colon_aca"]
 
-# Para frontend (nombres más cortos si quieres)
 CLASES_CORTAS = {
     "lung_n": "Pulmón normal",
     "lung_aca": "Pulmón AC",
@@ -65,31 +65,21 @@ GRADCAM_MIN_AREA = 80
 # =========================================================
 # FILTRO DE PROBABILIDADES (UI)
 # =========================================================
-UMBRAL_PROBABILIDAD = 0.1  # %
+UMBRAL_PROBABILIDAD = 0.1
 MAX_RESULTADOS = 3
-
-# =========================================================
-# MAPEO A IMÁGENES ANATÓMICAS
-# =========================================================
-MAPA_ANATOMIA = {
-    # COLON
-    "colon_aca": "colon_coloreado.png",   # cáncer
-    "colon_n": "pulmon_colon_grises",    # benigno
-
-    # PULMÓN
-    "lung_aca": "pulmon_coloreado.png",     # cáncer
-    "lung_scc": "pulmon_coloreado.png",     # cáncer
-    "lung_n": "pulmon_colon_grises",      # benigno
-}
-
-ANATOMIA_DEFAULT = "pulmon_colon_grises"
-
-
 
 # =========================================================
 # EXTENSIONES PERMITIDAS
 # =========================================================
 EXTENSIONES_VALIDAS = [".png", ".jpg", ".jpeg"]
+
+# =========================================================
+# ARCHIVOS QUE NO SON MUESTRAS (CLAVE)
+# =========================================================
+ARCHIVOS_EXCLUIDOS = {
+    "flavicon.png",
+    "vista_previa.jpeg",
+}
 
 # =========================================================
 # DEBUG / CONTROL
