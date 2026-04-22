@@ -7,7 +7,7 @@ El preprocesado de imágenes se realiza previamente en el pipeline de datos.
 
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     IMAGEN_SHAPE,
     NUM_CLASES,
     TASA_APRENDIZAJE_TRANSFER,

@@ -12,7 +12,7 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     SEED,
     MONITOR_METRIC,
     EARLY_STOPPING_PATIENCE,

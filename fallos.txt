@@ -1,0 +1,28 @@
+Configuración de entrenamiento: el modelo tardaba demasiado en entrenar, por lo que fue necesario interrumpir la ejecución en varias ocasiones con Ctrl + C. Se debe ajustar la configuración para reducir el tiempo de entrenamiento, aplicando un menor número de épocas y utilizando técnicas como early stopping. Además, es recomendable implementar un manejo de interrupciones para que, al cancelar el proceso, se guarden los resultados parciales generados.
+Generación de splits: existen imágenes duplicadas entre train, val y test, lo que provoca fuga de datos. Es necesario rehacer la partición del dataset asegurando que imágenes idénticas no aparezcan en distintos conjuntos.
+Preparación del dataset: hubo inconsistencias entre módulos (por cambios en funciones como crear_dataset_tf), por lo que es importante mantener una interfaz coherente entre el preprocesado y los scripts de evaluación.
+Tiempo de ejecución: el proceso completo resulta demasiado lento (especialmente en evaluación y procesamiento de datos), lo que dificulta iterar y probar cambios de forma eficiente.
+Interpretación de resultados: las métricas extremadamente altas no pueden considerarse representativas mientras existan problemas en los datos, por lo que es necesario validar primero la calidad del dataset antes de extraer conclusiones.
+
+✅ ANÁLISIS DE FALLOS FINALIZADO
+======================================================================
+📄 Archivo generado: OUTPUT\ERRORES\cnn_vgg_opt\analisis_errores_test.json
+
+Accuracy:   0.9767
+Nº errores: 87/3735 (2.3293%)
+
+Confusiones más frecuentes:
+clase_real clase_predicha  n
+   colon_n      colon_aca 46
+  lung_aca      colon_aca 16
+  lung_aca       lung_scc 16
+  lung_scc       lung_aca  5
+    lung_n       lung_aca  2
+    lung_n      colon_aca  1
+  lung_scc      colon_aca  1
+
+Hipótesis para discusión / trabajo futuro:
+- Una parte relevante de los errores ocurre con alta confianza, lo que podría indicar regiones visuales ambiguas, sesgos del dataset o ejemplos atípicos no bien representados.
+- La confusión más frecuente es 'colon_n' → 'colon_aca', por lo que esa pareja debería revisarse visualmente en trabajos futuros.   
+- Sería recomendable revisar manualmente los casos fallados para identificar artefactos de tinción, calidad de imagen, zonas con poco tejido representativo o similitud morfológica entre clases.
+- Como trabajo futuro, sería útil incorporar análisis por paciente, por slide o por origen de parche para comprobar si ciertos fallos están asociados a distribución de datos o a variabilidad biológica.

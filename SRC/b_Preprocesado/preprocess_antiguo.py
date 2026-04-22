@@ -11,7 +11,7 @@ from pathlib import Path
 import pandas as pd
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     CLAVES_CLASES,
     DESV_IMAGEN,
     MEDIA_IMAGEN,
@@ -188,7 +188,7 @@ def crear_dataset_tf(
 
 
 if __name__ == "__main__":
-    import a_Configuracion.config as cfg
+    import a_Configuracion.config_antiguo as cfg
 
     print("\n=== DEBUG PREPROCESADO ===")
     print("CWD:", Path.cwd())

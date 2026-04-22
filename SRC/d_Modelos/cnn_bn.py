@@ -5,7 +5,7 @@ Mejora la estabilidad del entrenamiento respecto al baseline.
 
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     IMAGEN_SHAPE,
     NUM_CLASES,
     TASA_APRENDIZAJE_BASELINE,

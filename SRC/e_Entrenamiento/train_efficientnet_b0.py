@@ -11,7 +11,7 @@ import json
 import numpy as np
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     BATCH_SIZE,
     EPOCHS_TRANSFER,
     MODELOS_DIR,
@@ -22,7 +22,7 @@ from b_Preprocesado.utils import (
     fijar_seed,
     convertir_a_json_serializable,
 )
-from c_Data.data import get_tf_datasets
+from c_Data.data_antiguo import get_tf_datasets
 from d_Modelos.efficientnet_b0 import (
     construir_modelo_efficientnet_b0 as construir_modelo,
 )

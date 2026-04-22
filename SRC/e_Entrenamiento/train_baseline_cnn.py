@@ -11,14 +11,14 @@ import json
 import numpy as np
 import tensorflow as tf
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     BATCH_SIZE,
     EPOCHS_BASELINE,
     MODELOS_DIR,
     MONITOR_METRIC,
 )
 from a_Configuracion.utils import construir_callbacks, fijar_seed
-from c_Data.data import get_tf_datasets
+from c_Data.data_antiguo import get_tf_datasets
 from d_Modelos.baseline_cnn import construir_modelo_baseline as construir_modelo
 
 

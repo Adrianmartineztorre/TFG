@@ -1,3 +1,4 @@
+#preprocess.py
 """
 Módulo de preprocesado de imágenes para el pipeline de entrenamiento.
 

@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from a_Configuracion.config import (
+from a_Configuracion.config_antiguo import (
     BATCH_SIZE,
     CLAVES_CLASES,
     RUTA_COLON,
