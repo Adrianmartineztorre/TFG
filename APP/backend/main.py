@@ -10,10 +10,12 @@ from config_app import (
     EXTENSIONES_VALIDAS,
     FRONTEND_DIR,
     IMAGENES_ENTRADA_DIR,
+    MODELOS_RNA_DIR,
     RESULTADOS_DIR,
 )
 from predict import predecir_imagen
 from gradcam_app import generar_gradcam_app
+from rna_app import obtener_perfil_rna
 
 
 app = FastAPI()
@@ -40,6 +42,11 @@ app.mount(
 )
 app.mount("/static/resultados", StaticFiles(directory=RESULTADOS_DIR), name="resultados")
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+app.mount(
+    "/static/interpretabilidad",
+    StaticFiles(directory=MODELOS_RNA_DIR),
+    name="interpretabilidad",
+)
 
 
 # =========================================================
@@ -60,20 +67,17 @@ def obtener_imagenes_validas() -> list[str]:
         and f.suffix.lower() in EXTENSIONES_VALIDAS
         and f.name not in ARCHIVOS_EXCLUIDOS
     ]
-
     return sorted(imagenes)[:5]
 
 
 # =========================================================
-# ROOT: ABRE LA WEB DIRECTAMENTE
+# ROOT
 # =========================================================
 @app.get("/")
 def inicio():
     ruta_index = FRONTEND_DIR / "index.html"
-
     if not ruta_index.exists():
         raise HTTPException(status_code=404, detail="No se encontró frontend/index.html")
-
     return FileResponse(ruta_index)
 
 
@@ -83,20 +87,17 @@ def inicio():
 @app.get("/favicon.ico")
 def favicon():
     ruta_favicon = ASSETS_DIR / "flavicon.png"
-
     if not ruta_favicon.exists():
         raise HTTPException(status_code=404, detail="No se encontró assets/flavicon.png")
-
     return FileResponse(ruta_favicon)
 
 
 # =========================================================
-# ENDPOINT: LISTAR IMÁGENES DISPONIBLES (máx 5)
+# ENDPOINT: LISTAR IMÁGENES
 # =========================================================
 @app.get("/imagenes_disponibles")
 def listar_imagenes():
     imagenes = obtener_imagenes_validas()
-
     return {
         "carpeta": str(IMAGENES_ENTRADA_DIR),
         "total": len(imagenes),
@@ -147,15 +148,27 @@ def analizar_imagen(req: ImagenRequest):
 
 
 # =========================================================
+# ENDPOINT: PERFIL RNA
+# =========================================================
+@app.get("/perfil_rna/{prediccion_clave}")
+def perfil_rna(prediccion_clave: str):
+    claves_validas = ["lung_aca", "lung_scc", "colon_aca", "lung_n", "colon_n"]
+    if prediccion_clave not in claves_validas:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Clave no válida: {prediccion_clave}"
+        )
+    return obtener_perfil_rna(prediccion_clave)
+
+
+# =========================================================
 # TEST RÁPIDO
 # =========================================================
 @app.get("/test")
 def test_rapido():
     imagenes = obtener_imagenes_validas()
-
     if not imagenes:
         raise HTTPException(status_code=404, detail="No hay imágenes válidas en imagenes_entrada")
-
     nombre = imagenes[0]
     return analizar_imagen(ImagenRequest(nombre_imagen=nombre))
 
