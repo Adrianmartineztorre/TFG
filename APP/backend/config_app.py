@@ -18,7 +18,6 @@ MODELO_PATH = MODELO_DIR / "model.best.keras"
 # MODELOS RNA
 # =========================================================
 MODELOS_RNA_DIR = BASE_DIR / "modelos_rna"
-IMAGENES_INTERPRETABILIDAD_DIR = MODELOS_RNA_DIR / "imagenes_interpretabilidad"
 
 # Crear carpetas automáticamente
 for carpeta in [
@@ -28,7 +27,6 @@ for carpeta in [
     GRADCAM_DIR,
     ASSETS_DIR,
     MODELOS_RNA_DIR,
-    IMAGENES_INTERPRETABILIDAD_DIR,
 ]:
     carpeta.mkdir(parents=True, exist_ok=True)
 
@@ -65,31 +63,4 @@ DESV_IMAGEN = [0.229, 0.224, 0.225]
 
 # =========================================================
 # GRADCAM CONFIG
-# =========================================================
-GRADCAM_ALPHA = 0.40
-GRADCAM_THRESHOLD = 0.60
-GRADCAM_MIN_AREA = 80
-
-# =========================================================
-# FILTRO DE PROBABILIDADES (UI)
-# =========================================================
-UMBRAL_PROBABILIDAD = 0.1
-MAX_RESULTADOS = 3
-
-# =========================================================
-# EXTENSIONES PERMITIDAS
-# =========================================================
-EXTENSIONES_VALIDAS = [".png", ".jpg", ".jpeg"]
-
-# =========================================================
-# ARCHIVOS QUE NO SON MUESTRAS (CLAVE)
-# =========================================================
-ARCHIVOS_EXCLUIDOS = {
-    "flavicon.png",
-    "vista_previa.jpeg",
-}
-
-# =========================================================
-# DEBUG / CONTROL
-# =========================================================
-DEBUG = True
+# ==============================================
