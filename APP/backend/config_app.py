@@ -10,9 +10,15 @@ MODELO_DIR = BASE_DIR / "modelo"
 IMAGENES_ENTRADA_DIR = BASE_DIR / "imagenes_entrada"
 RESULTADOS_DIR = BASE_DIR / "resultados"
 GRADCAM_DIR = RESULTADOS_DIR / "gradcam"
-ASSETS_DIR = BASE_DIR / "assets"   # ✅ NUEVO (favicon y futuros recursos)
+ASSETS_DIR = BASE_DIR / "assets"
 
 MODELO_PATH = MODELO_DIR / "model.best.keras"
+
+# =========================================================
+# MODELOS RNA
+# =========================================================
+MODELOS_RNA_DIR = BASE_DIR / "modelos_rna"
+IMAGENES_INTERPRETABILIDAD_DIR = MODELOS_RNA_DIR / "imagenes_interpretabilidad"
 
 # Crear carpetas automáticamente
 for carpeta in [
@@ -20,7 +26,9 @@ for carpeta in [
     IMAGENES_ENTRADA_DIR,
     RESULTADOS_DIR,
     GRADCAM_DIR,
-    ASSETS_DIR,   # ✅ NUEVO
+    ASSETS_DIR,
+    MODELOS_RNA_DIR,
+    IMAGENES_INTERPRETABILIDAD_DIR,
 ]:
     carpeta.mkdir(parents=True, exist_ok=True)
 
