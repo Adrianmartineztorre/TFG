@@ -456,6 +456,102 @@
       line-height: 1.5;
     }
 
+    /* ── RNA ── */
+    .rna-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .rna-gen-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .rna-gen-nombre {
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .rna-gen-nivel {
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .rna-gen-nivel.muy-alto { color: #e05c2a; background: #e05c2a18; }
+    .rna-gen-nivel.alto     { color: #c2660a; background: #f0956a18; }
+    .rna-gen-nivel.moderado { color: #6f6d66; background: #6f6d6618; }
+
+    .rna-estadio-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rna-estadio-cabecera {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .rna-estadio-nombre {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .rna-estadio-pct {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .rna-barra-fondo {
+      width: 100%;
+      height: 8px;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .rna-barra-relleno {
+      height: 100%;
+      background: linear-gradient(90deg, #2563a8, #3fcf8e);
+      border-radius: 999px;
+      transition: width 0.65s cubic-bezier(.22,1,.36,1);
+    }
+
+    .rna-nota {
+      background: var(--surface2);
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-top: 4px;
+    }
+
+    .rna-nota-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .rna-nota-texto {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── LOADING ── */
     #loading-overlay {
       display: none;
       position: fixed;
@@ -493,103 +589,39 @@
       color: var(--muted);
     }
 
+    /* ── RESPONSIVE ── */
     @media (max-width: 1100px) {
-      .header-title {
-        white-space: normal;
-      }
-
-      .header-sub {
-        max-width: 100%;
-      }
+      .header-title { white-space: normal; }
+      .header-sub   { max-width: 100%; }
     }
 
     @media (max-width: 980px) {
-      .gradcam-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .image-card {
-        min-height: 320px;
-      }
+      .gradcam-grid        { grid-template-columns: 1fr; }
+      .image-card          { min-height: 320px; }
+      .rna-grid            { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 860px) {
-      .app {
-        width: calc(100% - 40px);
-        margin: 28px auto 60px;
-      }
-
-      .site-header {
-        padding: 20px;
-        align-items: flex-start;
-        min-height: auto;
-      }
-
-      .header-title {
-        font-size: 1.35rem;
-        white-space: normal;
-      }
-
-      .header-sub {
-        font-size: 1rem;
-        max-width: 100%;
-      }
-
-      #screen-inicio {
-        grid-template-columns: 1fr;
-      }
-
-      .preview-wrap {
-        min-height: 320px;
-      }
-
-      .image-card.panel-card {
-        min-height: 420px;
-      }
-
-      .image-card.panel-card img {
-        height: 360px;
-        min-width: 1200px;
-      }
+      .app           { width: calc(100% - 40px); margin: 28px auto 60px; }
+      .site-header   { padding: 20px; align-items: flex-start; min-height: auto; }
+      .header-title  { font-size: 1.35rem; white-space: normal; }
+      .header-sub    { font-size: 1rem; max-width: 100%; }
+      #screen-inicio { grid-template-columns: 1fr; }
+      .preview-wrap  { min-height: 320px; }
+      .image-card.panel-card     { min-height: 420px; }
+      .image-card.panel-card img { height: 360px; min-width: 1200px; }
     }
 
     @media (max-width: 540px) {
-      .resultado-hero {
-        padding: 24px;
-      }
-
-      #prediccion-texto {
-        font-size: 1.8rem;
-      }
-
-      #prediccion-porcentaje {
-        font-size: 2.9rem;
-      }
-
-      .app {
-        width: calc(100% - 24px);
-      }
-
-      .card-inner {
-        padding: 22px;
-      }
-
-      .btn-row {
-        flex-direction: column;
-      }
-
-      .image-card {
-        min-height: 260px;
-      }
-
-      .image-card.panel-card {
-        min-height: 340px;
-      }
-
-      .image-card.panel-card img {
-        height: 260px;
-        min-width: 900px;
-      }
+      .resultado-hero  { padding: 24px; }
+      #prediccion-texto   { font-size: 1.8rem; }
+      #prediccion-porcentaje { font-size: 2.9rem; }
+      .app             { width: calc(100% - 24px); }
+      .card-inner      { padding: 22px; }
+      .btn-row         { flex-direction: column; }
+      .image-card      { min-height: 260px; }
+      .image-card.panel-card     { min-height: 340px; }
+      .image-card.panel-card img { height: 260px; min-width: 900px; }
     }
   </style>
 </head>
@@ -607,6 +639,7 @@
 
   <main class="app">
 
+    <!-- ── PANTALLA INICIO ── -->
     <div id="screen-inicio">
 
       <div class="card">
@@ -642,10 +675,12 @@
 
     </div>
 
+    <!-- ── PANTALLA RESULTADOS ── -->
     <div id="screen-resultados">
 
       <button class="back-btn" id="btn-volver">← Volver al inicio</button>
 
+      <!-- Hero resultado -->
       <div class="resultado-hero">
         <p class="res-filename" id="res-nombre-imagen">—</p>
         <div class="res-badge">Análisis completado</div>
@@ -654,6 +689,7 @@
         <p id="prediccion-clase">—</p>
       </div>
 
+      <!-- Probabilidades -->
       <div class="card barras-card">
         <div class="card-inner">
           <h2 class="card-title">Probabilidad por clase</h2>
@@ -663,6 +699,7 @@
         </div>
       </div>
 
+      <!-- Grad-CAM -->
       <div class="card">
         <div class="card-inner">
           <h2 class="card-title">Interpretación visual del modelo (Grad-CAM)</h2>
@@ -698,6 +735,53 @@
         </div>
       </div>
 
+      <!-- ── PERFIL RNA (NUEVO) ── -->
+      <div class="card" id="card-rna" style="display:none; margin-top:28px;">
+        <div class="card-inner">
+          <h2 class="card-title">🧬 Perfil molecular RNA</h2>
+          <p class="gradcam-desc">
+            Perfil de expresión génica asociado al tipo de tumor detectado,
+            extraído de 1.686 pacientes del TCGA.
+          </p>
+
+          <!-- Caso benigno -->
+          <div id="rna-benigno" style="display:none;">
+            <p style="color:var(--muted);font-size:1.1rem;line-height:1.7;" id="rna-desc-benigno"></p>
+          </div>
+
+          <!-- Caso tumoral -->
+          <div id="rna-tumoral">
+            <p style="color:var(--muted);font-size:1.05rem;line-height:1.7;margin-bottom:28px;" id="rna-descripcion"></p>
+
+            <div class="rna-grid">
+
+              <!-- Genes -->
+              <div>
+                <p class="field-label" style="margin-bottom:16px;">Genes más expresados</p>
+                <div id="rna-genes" style="display:flex;flex-direction:column;gap:10px;"></div>
+              </div>
+
+              <!-- Estadios -->
+              <div>
+                <p class="field-label" style="margin-bottom:16px;">Distribución de estadios (TCGA)</p>
+                <div id="rna-estadios" style="display:flex;flex-direction:column;gap:12px;"></div>
+              </div>
+
+            </div>
+
+            <div class="rna-nota">
+              <p class="rna-nota-label">Nota metodológica</p>
+              <p class="rna-nota-texto">
+                El perfil molecular se obtiene de datos transcriptómicos del TCGA y es representativo
+                del tipo tumoral detectado por el modelo de imagen, no del paciente individual.
+                Los modelos de clasificación RNA alcanzaron un 96% de accuracy en el conjunto de test.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -709,6 +793,7 @@
   <script>
     const API_BASE = "";
 
+    // ── REFERENCIAS DOM ──────────────────────────────────────────────────────
     const selectorImagen   = document.getElementById("selector-imagen");
     const btnRecargar      = document.getElementById("btn-recargar");
     const btnAnalizar      = document.getElementById("btn-analizar");
@@ -735,6 +820,16 @@
     const imagenPanel      = document.getElementById("imagen-panel");
     const panelPH          = document.getElementById("panel-placeholder");
 
+    // RNA
+    const cardRna          = document.getElementById("card-rna");
+    const rnaBenigno       = document.getElementById("rna-benigno");
+    const rnaDescBenigno   = document.getElementById("rna-desc-benigno");
+    const rnaTumoral       = document.getElementById("rna-tumoral");
+    const rnaDescripcion   = document.getElementById("rna-descripcion");
+    const rnaGenes         = document.getElementById("rna-genes");
+    const rnaEstadios      = document.getElementById("rna-estadios");
+
+    // ── HELPERS ──────────────────────────────────────────────────────────────
     function showImg(img, ph, src) {
       if (!src) {
         img.style.display = "none";
@@ -752,9 +847,7 @@
         barrasDiv.innerHTML = '<p style="color:var(--muted);font-size:1rem;">Sin datos disponibles.</p>';
         return;
       }
-
       barrasDiv.innerHTML = "";
-
       dist.forEach(item => {
         const pct = Math.max(0, Math.min(Number(item.porcentaje), 100));
         const d = document.createElement("div");
@@ -767,9 +860,7 @@
           <div class="barra-fondo">
             <div class="barra-relleno" style="width:0%"></div>
           </div>`;
-
         barrasDiv.appendChild(d);
-
         requestAnimationFrame(() => {
           d.querySelector(".barra-relleno").style.width = `${pct}%`;
         });
@@ -784,6 +875,58 @@
       return `Se detecta un patrón compatible con: ${nombre}.`;
     }
 
+    function nivelClass(nivel) {
+      if (nivel === "Muy alto") return "muy-alto";
+      if (nivel === "Alto")     return "alto";
+      return "moderado";
+    }
+
+    function pintarRNA(rna) {
+      cardRna.style.display = "block";
+
+      if (!rna.disponible) {
+        rnaBenigno.style.display = "block";
+        rnaTumoral.style.display = "none";
+        rnaDescBenigno.textContent = rna.descripcion_molecular;
+        return;
+      }
+
+      rnaBenigno.style.display = "none";
+      rnaTumoral.style.display = "block";
+      rnaDescripcion.textContent = rna.descripcion_molecular;
+
+      // Genes
+      rnaGenes.innerHTML = "";
+      (rna.genes_relevantes || []).forEach(g => {
+        rnaGenes.innerHTML += `
+          <div class="rna-gen-item">
+            <span class="rna-gen-nombre">${g.gen}</span>
+            <span class="rna-gen-nivel ${nivelClass(g.nivel)}">${g.nivel}</span>
+          </div>`;
+      });
+
+      // Estadios
+      rnaEstadios.innerHTML = "";
+      (rna.distribucion_estadios || []).forEach(e => {
+        const pct = Number(e.porcentaje);
+        const div = document.createElement("div");
+        div.className = "rna-estadio-item";
+        div.innerHTML = `
+          <div class="rna-estadio-cabecera">
+            <span class="rna-estadio-nombre">${e.estadio}</span>
+            <span class="rna-estadio-pct">${pct}%</span>
+          </div>
+          <div class="rna-barra-fondo">
+            <div class="rna-barra-relleno" style="width:0%"></div>
+          </div>`;
+        rnaEstadios.appendChild(div);
+        requestAnimationFrame(() => {
+          div.querySelector(".rna-barra-relleno").style.width = `${pct}%`;
+        });
+      });
+    }
+
+    // ── CARGA DE IMÁGENES ────────────────────────────────────────────────────
     selectorImagen.addEventListener("change", () => {
       const v = selectorImagen.value;
       if (!v) {
@@ -803,11 +946,9 @@
         if (!res.ok) throw new Error("No se pudieron cargar las imágenes.");
         const data = await res.json();
         const imgs = data.imagenes || [];
-
         selectorImagen.innerHTML = imgs.length
           ? `<option value="">Selecciona una imagen</option>` + imgs.map(n => `<option value="${n}">${n}</option>`).join("")
           : `<option value="">No hay imágenes disponibles</option>`;
-
         estado.textContent = imgs.length ? "Imágenes cargadas." : "No se encontraron imágenes.";
         previewImagen.style.display = "none";
         previewPH.style.display = "";
@@ -817,6 +958,7 @@
       }
     }
 
+    // ── ANÁLISIS ─────────────────────────────────────────────────────────────
     async function analizarImagen() {
       const nombre = selectorImagen.value;
       if (!nombre) {
@@ -828,26 +970,38 @@
       btnAnalizar.disabled = true;
 
       try {
+        // 1. Modelo de imagen
         const res = await fetch(`${API_BASE}/analizar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ nombre_imagen: nombre })
         });
-
         if (!res.ok) throw new Error("No se pudo analizar la imagen.");
         const data = await res.json();
 
-        resNombreImagen.textContent = data.imagen || nombre;
-        prediccionTexto.textContent = data.prediccion || "—";
-        prediccionPct.textContent = `${Number(data.porcentaje_prediccion).toFixed(2)}%`;
-        prediccionClase.textContent = obtenerTexto(data.prediccion_clave, data.prediccion);
+        resNombreImagen.textContent  = data.imagen || nombre;
+        prediccionTexto.textContent  = data.prediccion || "—";
+        prediccionPct.textContent    = `${Number(data.porcentaje_prediccion).toFixed(2)}%`;
+        prediccionClase.textContent  = obtenerTexto(data.prediccion_clave, data.prediccion);
         pintarBarras(data.distribucion || []);
 
         showImg(imagenEntrada, entradaPH, data.ruta_imagen);
         showImg(imagenGradcam, gradcamPH, data.gradcam?.gradcam);
-        showImg(imagenPanel, panelPH, data.gradcam?.panel);
+        showImg(imagenPanel,   panelPH,   data.gradcam?.panel);
 
-        screenInicio.style.display = "none";
+        // 2. Perfil RNA
+        try {
+          const resRna = await fetch(`${API_BASE}/perfil_rna/${data.prediccion_clave}`);
+          if (resRna.ok) {
+            const rna = await resRna.json();
+            pintarRNA(rna);
+          }
+        } catch (eRna) {
+          console.warn("Perfil RNA no disponible:", eRna);
+          cardRna.style.display = "none";
+        }
+
+        screenInicio.style.display     = "none";
         screenResultados.style.display = "block";
         window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -859,9 +1013,11 @@
       }
     }
 
+    // ── EVENTOS ──────────────────────────────────────────────────────────────
     btnVolver.addEventListener("click", () => {
       screenResultados.style.display = "none";
-      screenInicio.style.display = "grid";
+      cardRna.style.display          = "none";
+      screenInicio.style.display     = "grid";
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
