@@ -1,0 +1,16 @@
+Accuracy:   0.9936
+Nº errores: 24/3735 (0.6426%)
+
+Confusiones más frecuentes:
+clase_real clase_predicha  n
+  lung_aca       lung_scc 15
+  lung_scc       lung_aca  5
+ colon_aca       lung_scc  2
+ colon_aca        colon_n  1
+   colon_n      colon_aca  1
+
+Hipótesis para discusión / trabajo futuro:
+- Una parte relevante de los errores ocurre con alta confianza, lo que podría indicar regiones visuales ambiguas, sesgos del dataset o ejemplos atípicos no bien representados.
+- La confusión más frecuente es 'lung_aca' → 'lung_scc', por lo que esa pareja debería revisarse visualmente en trabajos futuros.
+- Sería recomendable revisar manualmente los casos fallados para identificar artefactos de tinción, calidad de imagen, zonas con poco tejido representativo o similitud morfológica entre clases.
+- Como trabajo futuro, sería útil incorporar análisis por paciente, por slide o por origen de parche para comprobar si ciertos fallos están asociados a distribución de datos o a variabilidad biológica.

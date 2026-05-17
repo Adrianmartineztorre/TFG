@@ -1,0 +1,6 @@
+﻿,lung_n,lung_aca,lung_scc,colon_n,colon_aca
+lung_n,748,0,0,0,0
+lung_aca,0,728,15,0,0
+lung_scc,0,5,734,0,0
+colon_n,0,0,0,747,1
+colon_aca,0,0,2,1,754

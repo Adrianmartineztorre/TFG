@@ -1,13 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Diagnóstico multimodal del cáncer</title>
-
+ 
   <link rel="icon" href="/assets/flavicon.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-
+ 
   <style>
     :root {
       --bg: #f2f0ed;
@@ -21,16 +22,11 @@
       --result-bg: #1c3a4a;
       --result-accent: #3fcf8e;
       --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-      --shadow-md: 0 8px 32px rgba(0,0,0,0.09);
       --r: 18px;
     }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+ 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
@@ -38,8 +34,7 @@
       min-height: 100vh;
       font-size: 17px;
     }
-
-    /* ── HEADER ── */
+ 
     .site-header {
       background: var(--surface);
       border-bottom: 1px solid var(--line);
@@ -52,618 +47,279 @@
       top: 0;
       z-index: 50;
     }
-
+ 
     .header-logo {
-      width: 72px;
-      height: 72px;
+      width: 72px; height: 72px;
       background: var(--accent);
       border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 36px;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; flex-shrink: 0;
     }
-
-    .header-title-wrap {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .header-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.9rem;
-      color: var(--text);
-      line-height: 1.15;
-      white-space: nowrap;
-    }
-
-    .header-sub {
-      font-size: 1.18rem;
-      color: var(--muted);
-      margin-top: 10px;
-      line-height: 1.55;
-      max-width: 1400px;
-    }
-
-    .app {
-      width: min(1240px, calc(100% - 80px));
-      margin: 52px auto 90px;
-    }
-
-    .card {
-      background: var(--surface);
-      border-radius: var(--r);
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .card-inner {
-      padding: 36px;
-    }
-
-    .card-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.45rem;
-      font-weight: 700;
-      margin-bottom: 26px;
-      color: var(--text);
-    }
-
-    #screen-inicio {
-      display: grid;
-      grid-template-columns: 1fr 1.25fr;
-      gap: 28px;
-      align-items: start;
-    }
-
-    .field-label {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-    }
-
+ 
+    .header-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.9rem; color: var(--text); line-height: 1.15; white-space: nowrap; }
+    .header-sub { font-size: 1.18rem; color: var(--muted); margin-top: 10px; line-height: 1.55; max-width: 1400px; }
+ 
+    .app { width: min(1240px, calc(100% - 80px)); margin: 52px auto 90px; }
+ 
+    .card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+    .card-inner { padding: 36px; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 1.45rem; font-weight: 700; margin-bottom: 26px; color: var(--text); }
+ 
+    #screen-inicio { display: grid; grid-template-columns: 1fr 1.25fr; gap: 28px; align-items: start; }
+ 
+    .field-label { font-size: 1rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+ 
     select {
-      width: 100%;
-      padding: 16px 44px 16px 18px;
-      border-radius: 12px;
-      border: 1.5px solid var(--line);
-      font-family: 'Inter', sans-serif;
-      font-size: 1.08rem;
-      background: var(--surface2);
-      color: var(--text);
-      cursor: pointer;
-      appearance: none;
+      width: 100%; padding: 16px 44px 16px 18px;
+      border-radius: 12px; border: 1.5px solid var(--line);
+      font-family: 'Inter', sans-serif; font-size: 1.08rem;
+      background: var(--surface2); color: var(--text); cursor: pointer; appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236f6d66' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      transition: border-color 0.15s;
+      background-repeat: no-repeat; background-position: right 14px center; transition: border-color 0.15s;
     }
-
-    select:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 22px;
-    }
-
-    button {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: transform 0.12s, opacity 0.12s;
-      font-size: 1rem;
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      opacity: 0.92;
-    }
-
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    #btn-recargar {
-      padding: 14px 20px;
-      background: var(--surface2);
-      color: var(--muted);
-      border: 1.5px solid var(--line);
-      font-size: 0.98rem;
-      flex-shrink: 0;
-    }
-
-    #btn-analizar {
-      padding: 14px 30px;
-      background: var(--accent);
-      color: white;
-      flex: 1;
-      font-size: 1.08rem;
-      letter-spacing: 0.02em;
-    }
-
-    .estado-text {
-      margin-top: 18px;
-      font-size: 1.16rem;
-      color: var(--muted);
-      min-height: 24px;
-    }
-
-    .preview-wrap {
-      min-height: 430px;
-      background: var(--surface2);
-      border-top: 1px solid var(--line);
-      border-radius: 0 0 var(--r) var(--r);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      padding: 10px 24px 24px;
-    }
-
-    .preview-wrap img {
-      max-width: 100%;
-      max-height: 540px;
-      object-fit: contain;
-      display: none;
-      border-radius: 12px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 24px;
-    }
-
-    .empty-icon {
-      font-size: 3rem;
-      opacity: 0.2;
-      margin-bottom: 12px;
-    }
-
-    .empty-text {
+    select:focus { outline: none; border-color: var(--accent); }
+ 
+    .btn-row { display: flex; gap: 12px; margin-top: 22px; }
+ 
+    button { font-family: 'Syne', sans-serif; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; transition: transform 0.12s, opacity 0.12s; font-size: 1rem; }
+    button:hover:not(:disabled) { transform: translateY(-1px); opacity: 0.92; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+ 
+    #btn-recargar { padding: 14px 20px; background: var(--surface2); color: var(--muted); border: 1.5px solid var(--line); font-size: 0.98rem; flex-shrink: 0; }
+    #btn-analizar { padding: 14px 30px; background: var(--accent); color: white; flex: 1; font-size: 1.08rem; letter-spacing: 0.02em; }
+ 
+    .estado-text { margin-top: 18px; font-size: 1.16rem; color: var(--muted); min-height: 24px; }
+ 
+    .preview-wrap { min-height: 430px; background: var(--surface2); border-top: 1px solid var(--line); border-radius: 0 0 var(--r) var(--r); display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 10px 24px 24px; }
+    .preview-wrap img { max-width: 100%; max-height: 540px; object-fit: contain; display: none; border-radius: 12px; }
+ 
+    .empty-state { text-align: center; padding: 40px 24px; }
+    .empty-icon { font-size: 3rem; opacity: 0.2; margin-bottom: 12px; }
+    .empty-text { font-size: 1.05rem; color: var(--muted); line-height: 1.6; }
+ 
+    #screen-resultados { display: none; }
+ 
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; background: none; color: var(--accent); font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; padding: 0; margin-bottom: 28px; border-radius: 0; letter-spacing: 0.02em; }
+    .back-btn:hover { opacity: 1; transform: none; gap: 12px; }
+ 
+    .resultado-hero { background: var(--result-bg); border-radius: var(--r); padding: 44px 48px; margin-bottom: 26px; }
+    .res-filename { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+ 
+    .res-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(63,207,142,0.15); border: 1px solid rgba(63,207,142,0.35); color: var(--result-accent); font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 18px; width: fit-content; }
+    .res-badge::before { content: ''; width: 7px; height: 7px; background: var(--result-accent); border-radius: 50%; }
+ 
+    #prediccion-texto { font-family: 'Syne', sans-serif; font-size: 2.6rem; font-weight: 800; color: white; line-height: 1.12; margin-bottom: 12px; }
+    #prediccion-porcentaje { font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800; color: var(--result-accent); line-height: 1; margin-bottom: 18px; letter-spacing: -0.02em; }
+    #prediccion-clase { font-size: 1.22rem; color: rgba(255,255,255,0.72); line-height: 1.7; max-width: 820px; }
+ 
+    .barras-card { margin-bottom: 24px; }
+    .barras-probabilidad { display: flex; flex-direction: column; gap: 20px; }
+    .barra-item { display: flex; flex-direction: column; gap: 8px; }
+    .barra-cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; }
+    .barra-nombre { font-size: 1.18rem; font-weight: 600; }
+    .barra-valor { font-size: 1.08rem; color: var(--muted); font-weight: 600; }
+    .barra-fondo { width: 100%; height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
+    .barra-relleno { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; transition: width 0.65s cubic-bezier(.22,1,.36,1); }
+ 
+    .gradcam-desc { font-size: 1.2rem; color: var(--muted); line-height: 1.7; margin-bottom: 30px; }
+    .gradcam-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; margin-bottom: 32px; }
+    .image-box h3 { font-size: 0.98rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; font-family: 'Inter', sans-serif; }
+    .image-card { background: var(--surface2); border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; padding: 14px; min-height: 380px; }
+    .image-card img { width: 100%; height: 100%; object-fit: contain; display: none; border-radius: 10px; }
+    .image-card.panel-card { aspect-ratio: auto; min-height: 560px; padding: 20px; background: var(--surface); border-color: var(--line); overflow-x: auto; overflow-y: hidden; display: block; }
+    .image-card.panel-card img { width: auto; height: 500px; min-width: 1650px; max-height: 560px; object-fit: contain; border-radius: 10px; display: none; }
+    .placeholder { font-size: 0.98rem; color: var(--muted); text-align: center; padding: 20px; line-height: 1.5; }
+ 
+    /* ── RNA PREMIUM ── */
+ 
+    .rna-card-subtitle {
       font-size: 1.05rem;
       color: var(--muted);
-      line-height: 1.6;
+      line-height: 1.65;
+      margin-top: -16px;
+      margin-bottom: 36px;
+      max-width: 780px;
     }
-
-    #screen-resultados {
-      display: none;
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: none;
-      color: var(--accent);
-      font-family: 'Syne', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 0;
-      margin-bottom: 28px;
-      border-radius: 0;
-      letter-spacing: 0.02em;
-    }
-
-    .back-btn:hover {
-      opacity: 1;
-      transform: none;
-      gap: 12px;
-    }
-
-    .resultado-hero {
-      background: var(--result-bg);
-      border-radius: var(--r);
-      padding: 44px 48px;
-      margin-bottom: 26px;
-    }
-
-    .res-filename {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.4);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 10px;
-    }
-
-    .res-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(63,207,142,0.15);
-      border: 1px solid rgba(63,207,142,0.35);
-      color: var(--result-accent);
-      font-family: 'Syne', sans-serif;
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 5px 12px;
-      border-radius: 999px;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-      width: fit-content;
-    }
-
-    .res-badge::before {
-      content: '';
-      width: 7px;
-      height: 7px;
-      background: var(--result-accent);
-      border-radius: 50%;
-    }
-
-    #prediccion-texto {
-      font-family: 'Syne', sans-serif;
-      font-size: 2.6rem;
-      font-weight: 800;
-      color: white;
-      line-height: 1.12;
-      margin-bottom: 12px;
-    }
-
-    #prediccion-porcentaje {
-      font-family: 'Syne', sans-serif;
-      font-size: 4rem;
-      font-weight: 800;
-      color: var(--result-accent);
-      line-height: 1;
-      margin-bottom: 18px;
-      letter-spacing: -0.02em;
-    }
-
-    #prediccion-clase {
-      font-size: 1.22rem;
-      color: rgba(255,255,255,0.72);
-      line-height: 1.7;
-      max-width: 820px;
-    }
-
-    .barras-card {
-      margin-bottom: 24px;
-    }
-
-    .barras-probabilidad {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .barra-item {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .barra-cabecera {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 18px;
-    }
-
-    .barra-nombre {
-      font-size: 1.18rem;
-      font-weight: 600;
-    }
-
-    .barra-valor {
-      font-size: 1.08rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .barra-fondo {
-      width: 100%;
-      height: 10px;
-      background: var(--line);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .barra-relleno {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      border-radius: 999px;
-      transition: width 0.65s cubic-bezier(.22,1,.36,1);
-    }
-
-    .gradcam-desc {
-      font-size: 1.2rem;
-      color: var(--muted);
-      line-height: 1.7;
-      margin-bottom: 30px;
-    }
-
-    .gradcam-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 28px;
-      margin-bottom: 32px;
-    }
-
-    .image-box h3 {
-      font-size: 0.98rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 12px;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .image-card {
-      background: var(--surface2);
-      border: 1.5px solid var(--line);
-      border-radius: 14px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      aspect-ratio: 1 / 1;
-      padding: 14px;
-      min-height: 380px;
-    }
-
-    .image-card img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: none;
-      border-radius: 10px;
-    }
-
-    .image-card.panel-card {
-      aspect-ratio: auto;
-      min-height: 560px;
-      padding: 20px;
-      background: var(--surface);
-      border-color: var(--line);
-      overflow-x: auto;
-      overflow-y: hidden;
-      display: block;
-    }
-
-    .image-card.panel-card img {
-      width: auto;
-      height: 500px;
-      min-width: 1650px;
-      max-height: 560px;
-      object-fit: contain;
-      border-radius: 10px;
-      display: none;
-    }
-
-    .placeholder {
-      font-size: 0.98rem;
-      color: var(--muted);
-      text-align: center;
-      padding: 20px;
-      line-height: 1.5;
-    }
-
-    /* ── RNA ── */
-    .rna-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 28px;
-    }
-
-    .rna-gen-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px;
+ 
+    .rna-genes-card {
       background: var(--surface2);
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 18px;
+      padding: 36px 40px 32px;
+      margin-bottom: 28px;
     }
-
-    .rna-gen-nombre {
-      font-weight: 600;
-      font-size: 1rem;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .rna-gen-nivel {
-      font-size: 0.88rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 999px;
-    }
-
-    .rna-gen-nivel.muy-alto { color: #e05c2a; background: #e05c2a18; }
-    .rna-gen-nivel.alto     { color: #c2660a; background: #f0956a18; }
-    .rna-gen-nivel.moderado { color: #6f6d66; background: #6f6d6618; }
-
-    .rna-estadio-item {
+ 
+    .rna-genes-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 26px;
     }
-
-    .rna-estadio-cabecera {
-      display: flex;
-      justify-content: space-between;
+ 
+    .rna-gen-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 90px;
+      align-items: center;
+      gap: 24px;
     }
-
-    .rna-estadio-nombre {
-      font-size: 1rem;
-      font-weight: 600;
+ 
+    .rna-gen-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.03em;
     }
-
-    .rna-estadio-pct {
-      font-size: 1rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .rna-barra-fondo {
-      width: 100%;
-      height: 8px;
+ 
+    .rna-gen-track {
+      height: 9px;
       background: var(--line);
       border-radius: 999px;
       overflow: hidden;
     }
-
-    .rna-barra-relleno {
+ 
+    .rna-gen-fill {
       height: 100%;
-      background: linear-gradient(90deg, #2563a8, #3fcf8e);
       border-radius: 999px;
-      transition: width 0.65s cubic-bezier(.22,1,.36,1);
+      transition: width 0.75s cubic-bezier(.22,1,.36,1);
     }
-
+ 
+    .fill-muy-alto { background: #1a9e65; }
+    .fill-alto     { background: var(--accent); }
+    .fill-moderado { background: #b0ada6; }
+ 
+    .rna-gen-badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: right;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+ 
+    .badge-muy-alto { color: #1a9e65; }
+    .badge-alto     { color: var(--accent); }
+    .badge-moderado { color: var(--muted); }
+ 
     .rna-nota {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.7;
+      padding: 18px 24px;
       background: var(--surface2);
-      border: 1.5px solid var(--line);
-      border-radius: 14px;
-      padding: 20px 24px;
-      margin-top: 4px;
+      border-radius: 12px;
+      border-left: 3px solid var(--line);
     }
-
-    .rna-nota-label {
-      font-size: 0.85rem;
+ 
+    .rna-estadios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 18px;
+    }
+ 
+    .rna-estadio-bloque {
+      background: var(--surface2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+ 
+    .rna-estadio-bloque::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.75s cubic-bezier(.22,1,.36,1);
+      border-radius: 0 0 16px 16px;
+    }
+ 
+    .rna-estadio-bloque.loaded::after { transform: scaleX(1); }
+ 
+    .rna-estadio-nombre {
+      font-size: 0.8rem;
       font-weight: 700;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
+      letter-spacing: 0.09em;
     }
-
-    .rna-nota-texto {
-      font-size: 1rem;
-      color: var(--muted);
-      line-height: 1.65;
+ 
+    .rna-estadio-pct {
+      font-family: 'Inter', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
     }
-
+ 
+    #rna-benigno p { font-size: 1.05rem; color: var(--muted); line-height: 1.7; }
+ 
     /* ── LOADING ── */
-    #loading-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(242,240,237,0.82);
-      backdrop-filter: blur(6px);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    #loading-overlay.visible {
-      display: flex;
-    }
-
-    .spinner {
-      width: 52px;
-      height: 52px;
-      border: 3px solid var(--line);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.75s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .loading-label {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.08rem;
-      font-weight: 600;
-      color: var(--muted);
-    }
-
+    #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(242,240,237,0.82); backdrop-filter: blur(6px); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+    #loading-overlay.visible { display: flex; }
+    .spinner { width: 52px; height: 52px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { font-family: 'Syne', sans-serif; font-size: 1.08rem; font-weight: 600; color: var(--muted); }
+ 
     /* ── RESPONSIVE ── */
-    @media (max-width: 1100px) {
-      .header-title { white-space: normal; }
-      .header-sub   { max-width: 100%; }
-    }
-
-    @media (max-width: 980px) {
-      .gradcam-grid        { grid-template-columns: 1fr; }
-      .image-card          { min-height: 320px; }
-      .rna-grid            { grid-template-columns: 1fr; }
-    }
-
+    @media (max-width: 1100px) { .header-title { white-space: normal; } .header-sub { max-width: 100%; } }
+    @media (max-width: 980px) { .gradcam-grid { grid-template-columns: 1fr; } .image-card { min-height: 320px; } }
     @media (max-width: 860px) {
-      .app           { width: calc(100% - 40px); margin: 28px auto 60px; }
-      .site-header   { padding: 20px; align-items: flex-start; min-height: auto; }
-      .header-title  { font-size: 1.35rem; white-space: normal; }
-      .header-sub    { font-size: 1rem; max-width: 100%; }
+      .app { width: calc(100% - 40px); margin: 28px auto 60px; }
+      .site-header { padding: 20px; align-items: flex-start; min-height: auto; }
+      .header-title { font-size: 1.35rem; white-space: normal; }
+      .header-sub { font-size: 1rem; }
       #screen-inicio { grid-template-columns: 1fr; }
-      .preview-wrap  { min-height: 320px; }
-      .image-card.panel-card     { min-height: 420px; }
+      .preview-wrap { min-height: 320px; }
+      .image-card.panel-card { min-height: 420px; }
       .image-card.panel-card img { height: 360px; min-width: 1200px; }
     }
-
     @media (max-width: 540px) {
-      .resultado-hero  { padding: 24px; }
-      #prediccion-texto   { font-size: 1.8rem; }
+      .resultado-hero { padding: 24px; }
+      #prediccion-texto { font-size: 1.8rem; }
       #prediccion-porcentaje { font-size: 2.9rem; }
-      .app             { width: calc(100% - 24px); }
-      .card-inner      { padding: 22px; }
-      .btn-row         { flex-direction: column; }
-      .image-card      { min-height: 260px; }
-      .image-card.panel-card     { min-height: 340px; }
-      .image-card.panel-card img { height: 260px; min-width: 900px; }
+      .app { width: calc(100% - 24px); }
+      .card-inner { padding: 22px; }
+      .btn-row { flex-direction: column; }
+      .image-card { min-height: 260px; }
+      .rna-gen-row { grid-template-columns: 90px 1fr 48px; gap: 10px; }
+      .rna-estadios-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-
+ 
   <header class="site-header">
     <div class="header-logo">🔬</div>
     <div class="header-title-wrap">
       <div class="header-title">Sistema de IA Multimodal para el diagnóstico del cáncer</div>
-      <div class="header-sub">
-        Sistema multimodal para el análisis del cáncer que combina información histopatológica, expresión génica y datos clínicos para determinar el tipo de cáncer, caracterizar el tumor, estimar su estadio y aportar una interpretación visual del proceso de decisión del modelo.
-      </div>
+      <div class="header-sub">Sistema multimodal que combina información histopatológica, expresión génica y datos clínicos para determinar el tipo de cáncer, caracterizar el tumor y estimar su estadio.</div>
     </div>
   </header>
-
+ 
   <main class="app">
-
-    <!-- ── PANTALLA INICIO ── -->
+ 
     <div id="screen-inicio">
-
       <div class="card">
         <div class="card-inner">
           <h2 class="card-title">Selección de muestra</h2>
-
           <p class="field-label">Imagen disponible</p>
-          <select id="selector-imagen">
-            <option value="">Cargando imágenes...</option>
-          </select>
-
+          <select id="selector-imagen"><option value="">Cargando imágenes...</option></select>
           <div class="btn-row">
             <button id="btn-recargar" type="button">↺ Actualizar</button>
             <button id="btn-analizar" type="button">Analizar →</button>
           </div>
-
           <p id="estado" class="estado-text">Sistema preparado para iniciar el análisis.</p>
         </div>
       </div>
-
+ 
       <div class="card">
-        <div class="card-inner" style="padding-bottom:8px;">
-          <h2 class="card-title">Vista previa</h2>
-        </div>
+        <div class="card-inner" style="padding-bottom:8px;"><h2 class="card-title">Vista previa</h2></div>
         <div class="preview-wrap">
           <img id="preview-imagen" alt="Vista previa" />
           <div id="preview-placeholder" class="empty-state">
@@ -672,15 +328,13 @@
           </div>
         </div>
       </div>
-
     </div>
-
-    <!-- ── PANTALLA RESULTADOS ── -->
+ 
+    <!-- RESULTADOS -->
     <div id="screen-resultados">
-
+ 
       <button class="back-btn" id="btn-volver">← Volver al inicio</button>
-
-      <!-- Hero resultado -->
+ 
       <div class="resultado-hero">
         <p class="res-filename" id="res-nombre-imagen">—</p>
         <div class="res-badge">Análisis completado</div>
@@ -688,8 +342,7 @@
         <p id="prediccion-porcentaje">—</p>
         <p id="prediccion-clase">—</p>
       </div>
-
-      <!-- Probabilidades -->
+ 
       <div class="card barras-card">
         <div class="card-inner">
           <h2 class="card-title">Probabilidad por clase</h2>
@@ -698,15 +351,11 @@
           </div>
         </div>
       </div>
-
-      <!-- Grad-CAM -->
+ 
       <div class="card">
         <div class="card-inner">
           <h2 class="card-title">Interpretación visual del modelo (Grad-CAM)</h2>
-          <p class="gradcam-desc">
-            Identifica las regiones de la imagen que han contribuido con mayor intensidad a la decisión del modelo.
-          </p>
-
+          <p class="gradcam-desc">Identifica las regiones de la imagen que han contribuido con mayor intensidad a la decisión del modelo.</p>
           <div class="gradcam-grid">
             <div class="image-box">
               <h3>Muestra original</h3>
@@ -715,7 +364,6 @@
                 <p id="entrada-placeholder" class="placeholder">La imagen analizada aparecerá aquí.</p>
               </div>
             </div>
-
             <div class="image-box">
               <h3>Mapa de activación Grad-CAM</h3>
               <div class="image-card">
@@ -724,7 +372,6 @@
               </div>
             </div>
           </div>
-
           <div class="image-box">
             <h3>Panel completo</h3>
             <div class="image-card panel-card">
@@ -734,211 +381,186 @@
           </div>
         </div>
       </div>
-
-      <!-- ── PERFIL RNA (NUEVO) ── -->
-      <div class="card" id="card-rna" style="display:none; margin-top:28px;">
-        <div class="card-inner">
-          <h2 class="card-title">🧬 Perfil molecular RNA</h2>
-          <p class="gradcam-desc">
-            Perfil de expresión génica asociado al tipo de tumor detectado,
-            extraído de 1.686 pacientes del TCGA.
-          </p>
-
-          <!-- Caso benigno -->
+ 
+      <!-- ── RNA: CARD 1 — GENES ── -->
+      <div class="card" id="card-rna-genes" style="display:none; margin-top:28px;">
+        <div class="card-inner" style="padding:48px 52px;">
+          <h2 class="card-title">Expresión génica media del subtipo detectado</h2>
+          <p class="rna-card-subtitle">Promedio sobre 1.686 pacientes TCGA · no corresponde a esta muestra individual</p>
+ 
           <div id="rna-benigno" style="display:none;">
-            <p style="color:var(--muted);font-size:1.1rem;line-height:1.7;" id="rna-desc-benigno"></p>
+            <p id="rna-desc-benigno"></p>
           </div>
-
-          <!-- Caso tumoral -->
-          <div id="rna-tumoral">
-            <p style="color:var(--muted);font-size:1.05rem;line-height:1.7;margin-bottom:28px;" id="rna-descripcion"></p>
-
-            <div class="rna-grid">
-
-              <!-- Genes -->
-              <div>
-                <p class="field-label" style="margin-bottom:16px;">Genes más expresados</p>
-                <div id="rna-genes" style="display:flex;flex-direction:column;gap:10px;"></div>
-              </div>
-
-              <!-- Estadios -->
-              <div>
-                <p class="field-label" style="margin-bottom:16px;">Distribución de estadios (TCGA)</p>
-                <div id="rna-estadios" style="display:flex;flex-direction:column;gap:12px;"></div>
-              </div>
-
+ 
+          <div id="rna-tumoral-genes">
+            <div class="rna-genes-card">
+              <div id="rna-genes" class="rna-genes-list"></div>
             </div>
-
-            <div class="rna-nota">
-              <p class="rna-nota-label">Nota metodológica</p>
-              <p class="rna-nota-texto">
-                El perfil molecular se obtiene de datos transcriptómicos del TCGA y es representativo
-                del tipo tumoral detectado por el modelo de imagen, no del paciente individual.
-                Los modelos de clasificación RNA alcanzaron un 96% de accuracy en el conjunto de test.
-              </p>
-            </div>
+            <p class="rna-nota" id="rna-descripcion"></p>
           </div>
-
         </div>
       </div>
-
+ 
+      <!-- ── RNA: CARD 2 — ESTADIOS ── -->
+      <div class="card" id="card-rna-estadios" style="display:none; margin-top:20px;">
+        <div class="card-inner" style="padding:48px 52px;">
+          <h2 class="card-title">Distribución de estadios en el subtipo detectado</h2>
+          <p class="rna-card-subtitle">Frecuencia de presentación clínica en la cohorte TCGA · no refleja el estadio de esta muestra</p>
+          <div id="rna-estadios" class="rna-estadios-grid"></div>
+        </div>
+      </div>
+ 
     </div>
   </main>
-
+ 
   <div id="loading-overlay">
     <div class="spinner"></div>
     <p class="loading-label">Analizando muestra...</p>
   </div>
-
+ 
   <script>
     const API_BASE = "";
-
-    // ── REFERENCIAS DOM ──────────────────────────────────────────────────────
-    const selectorImagen   = document.getElementById("selector-imagen");
-    const btnRecargar      = document.getElementById("btn-recargar");
-    const btnAnalizar      = document.getElementById("btn-analizar");
-    const btnVolver        = document.getElementById("btn-volver");
-    const estado           = document.getElementById("estado");
-    const loadingOverlay   = document.getElementById("loading-overlay");
-
-    const screenInicio     = document.getElementById("screen-inicio");
-    const screenResultados = document.getElementById("screen-resultados");
-
-    const previewImagen    = document.getElementById("preview-imagen");
-    const previewPH        = document.getElementById("preview-placeholder");
-
-    const resNombreImagen  = document.getElementById("res-nombre-imagen");
-    const prediccionTexto  = document.getElementById("prediccion-texto");
-    const prediccionPct    = document.getElementById("prediccion-porcentaje");
-    const prediccionClase  = document.getElementById("prediccion-clase");
-    const barrasDiv        = document.getElementById("barras-probabilidad");
-
-    const imagenEntrada    = document.getElementById("imagen-entrada");
-    const entradaPH        = document.getElementById("entrada-placeholder");
-    const imagenGradcam    = document.getElementById("imagen-gradcam");
-    const gradcamPH        = document.getElementById("gradcam-placeholder");
-    const imagenPanel      = document.getElementById("imagen-panel");
-    const panelPH          = document.getElementById("panel-placeholder");
-
-    // RNA
-    const cardRna          = document.getElementById("card-rna");
-    const rnaBenigno       = document.getElementById("rna-benigno");
-    const rnaDescBenigno   = document.getElementById("rna-desc-benigno");
-    const rnaTumoral       = document.getElementById("rna-tumoral");
-    const rnaDescripcion   = document.getElementById("rna-descripcion");
-    const rnaGenes         = document.getElementById("rna-genes");
-    const rnaEstadios      = document.getElementById("rna-estadios");
-
-    // ── HELPERS ──────────────────────────────────────────────────────────────
+ 
+    const selectorImagen    = document.getElementById("selector-imagen");
+    const btnRecargar       = document.getElementById("btn-recargar");
+    const btnAnalizar       = document.getElementById("btn-analizar");
+    const btnVolver         = document.getElementById("btn-volver");
+    const estado            = document.getElementById("estado");
+    const loadingOverlay    = document.getElementById("loading-overlay");
+    const screenInicio      = document.getElementById("screen-inicio");
+    const screenResultados  = document.getElementById("screen-resultados");
+    const previewImagen     = document.getElementById("preview-imagen");
+    const previewPH         = document.getElementById("preview-placeholder");
+    const resNombreImagen   = document.getElementById("res-nombre-imagen");
+    const prediccionTexto   = document.getElementById("prediccion-texto");
+    const prediccionPct     = document.getElementById("prediccion-porcentaje");
+    const prediccionClase   = document.getElementById("prediccion-clase");
+    const barrasDiv         = document.getElementById("barras-probabilidad");
+    const imagenEntrada     = document.getElementById("imagen-entrada");
+    const entradaPH         = document.getElementById("entrada-placeholder");
+    const imagenGradcam     = document.getElementById("imagen-gradcam");
+    const gradcamPH         = document.getElementById("gradcam-placeholder");
+    const imagenPanel       = document.getElementById("imagen-panel");
+    const panelPH           = document.getElementById("panel-placeholder");
+ 
+    const cardRnaGenes      = document.getElementById("card-rna-genes");
+    const cardRnaEstadios   = document.getElementById("card-rna-estadios");
+    const rnaBenigno        = document.getElementById("rna-benigno");
+    const rnaDescBenigno    = document.getElementById("rna-desc-benigno");
+    const rnaTumoralGenes   = document.getElementById("rna-tumoral-genes");
+    const rnaDescripcion    = document.getElementById("rna-descripcion");
+    const rnaGenes          = document.getElementById("rna-genes");
+    const rnaEstadios       = document.getElementById("rna-estadios");
+ 
     function showImg(img, ph, src) {
-      if (!src) {
-        img.style.display = "none";
-        img.removeAttribute("src");
-        if (ph) ph.style.display = "";
-        return;
-      }
+      if (!src) { img.style.display = "none"; img.removeAttribute("src"); if (ph) ph.style.display = ""; return; }
       img.src = `${API_BASE}${src}?t=${Date.now()}`;
       img.style.display = "block";
       if (ph) ph.style.display = "none";
     }
-
+ 
     function pintarBarras(dist) {
-      if (!dist || !dist.length) {
-        barrasDiv.innerHTML = '<p style="color:var(--muted);font-size:1rem;">Sin datos disponibles.</p>';
-        return;
-      }
+      if (!dist || !dist.length) { barrasDiv.innerHTML = '<p style="color:var(--muted);font-size:1rem;">Sin datos disponibles.</p>'; return; }
       barrasDiv.innerHTML = "";
       dist.forEach(item => {
         const pct = Math.max(0, Math.min(Number(item.porcentaje), 100));
         const d = document.createElement("div");
         d.className = "barra-item";
-        d.innerHTML = `
-          <div class="barra-cabecera">
-            <span class="barra-nombre">${item.nombre}</span>
-            <span class="barra-valor">${pct.toFixed(2)}%</span>
-          </div>
-          <div class="barra-fondo">
-            <div class="barra-relleno" style="width:0%"></div>
-          </div>`;
+        d.innerHTML = `<div class="barra-cabecera"><span class="barra-nombre">${item.nombre}</span><span class="barra-valor">${pct.toFixed(2)}%</span></div><div class="barra-fondo"><div class="barra-relleno" style="width:0%"></div></div>`;
         barrasDiv.appendChild(d);
-        requestAnimationFrame(() => {
-          d.querySelector(".barra-relleno").style.width = `${pct}%`;
-        });
+        requestAnimationFrame(() => { d.querySelector(".barra-relleno").style.width = `${pct}%`; });
       });
     }
-
+ 
     function obtenerTexto(clave, nombre) {
       if (!clave) return "—";
-      if (clave.endsWith("_n")) {
-        return `No se detecta hallazgo maligno. La muestra se clasifica como: ${nombre}.`;
-      }
+      if (clave.endsWith("_n")) return `No se detecta hallazgo maligno. La muestra se clasifica como: ${nombre}.`;
       return `Se detecta un patrón compatible con: ${nombre}.`;
     }
-
-    function nivelClass(nivel) {
-      if (nivel === "Muy alto") return "muy-alto";
-      if (nivel === "Alto")     return "alto";
-      return "moderado";
+ 
+    function nivelFill(nivel) {
+      if (nivel === "Muy alto") return "fill-muy-alto";
+      if (nivel === "Alto")     return "fill-alto";
+      return "fill-moderado";
     }
-
+ 
+    function nivelBadge(nivel) {
+      if (nivel === "Muy alto") return "badge-muy-alto";
+      if (nivel === "Alto")     return "badge-alto";
+      return "badge-moderado";
+    }
+ 
+    function nivelWidth(nivel) {
+      if (nivel === "Muy alto") return "92";
+      if (nivel === "Alto")     return "64";
+      return "38";
+    }
+ 
     function pintarRNA(rna) {
-      cardRna.style.display = "block";
-
+      cardRnaGenes.style.display = "block";
+ 
       if (!rna.disponible) {
         rnaBenigno.style.display = "block";
-        rnaTumoral.style.display = "none";
+        rnaTumoralGenes.style.display = "none";
+        cardRnaEstadios.style.display = "none";
         rnaDescBenigno.textContent = rna.descripcion_molecular;
         return;
       }
-
+ 
       rnaBenigno.style.display = "none";
-      rnaTumoral.style.display = "block";
+      rnaTumoralGenes.style.display = "block";
       rnaDescripcion.textContent = rna.descripcion_molecular;
-
-      // Genes
+ 
       rnaGenes.innerHTML = "";
       (rna.genes_relevantes || []).forEach(g => {
         rnaGenes.innerHTML += `
-          <div class="rna-gen-item">
-            <span class="rna-gen-nombre">${g.gen}</span>
-            <span class="rna-gen-nivel ${nivelClass(g.nivel)}">${g.nivel}</span>
+          <div class="rna-gen-row">
+            <span class="rna-gen-name">${g.gen}</span>
+            <div class="rna-gen-track">
+              <div class="rna-gen-fill ${nivelFill(g.nivel)}" style="width:0%" data-w="${nivelWidth(g.nivel)}"></div>
+            </div>
+            <span class="rna-gen-badge ${nivelBadge(g.nivel)}">${g.nivel}</span>
           </div>`;
       });
-
-      // Estadios
-      rnaEstadios.innerHTML = "";
-      (rna.distribucion_estadios || []).forEach(e => {
-        const pct = Number(e.porcentaje);
-        const div = document.createElement("div");
-        div.className = "rna-estadio-item";
-        div.innerHTML = `
-          <div class="rna-estadio-cabecera">
-            <span class="rna-estadio-nombre">${e.estadio}</span>
-            <span class="rna-estadio-pct">${pct}%</span>
-          </div>
-          <div class="rna-barra-fondo">
-            <div class="rna-barra-relleno" style="width:0%"></div>
-          </div>`;
-        rnaEstadios.appendChild(div);
-        requestAnimationFrame(() => {
-          div.querySelector(".rna-barra-relleno").style.width = `${pct}%`;
+ 
+      requestAnimationFrame(() => {
+        rnaGenes.querySelectorAll(".rna-gen-fill").forEach(el => {
+          el.style.width = el.dataset.w + "%";
         });
       });
+ 
+      cardRnaEstadios.style.display = "block";
+      rnaEstadios.innerHTML = "";
+ 
+      const maxPct = Math.max(...(rna.distribucion_estadios || []).map(e => Number(e.porcentaje)));
+ 
+      (rna.distribucion_estadios || []).forEach(e => {
+        const pct = Number(e.porcentaje);
+        const fraccion = maxPct > 0 ? pct / maxPct : 0;
+        const div = document.createElement("div");
+        div.className = "rna-estadio-bloque";
+        div.style.setProperty("--scaleX", fraccion);
+        div.innerHTML = `
+          <span class="rna-estadio-nombre">${e.estadio}</span>
+          <span class="rna-estadio-pct">${pct}<small style="font-size:1rem;font-weight:400;color:var(--muted);">%</small></span>`;
+        rnaEstadios.appendChild(div);
+        requestAnimationFrame(() => {
+          div.style.setProperty("--tw", `${fraccion}`);
+          setTimeout(() => div.classList.add("loaded"), 80);
+        });
+      });
+ 
+      const barrasEstadio = rnaEstadios.querySelectorAll(".rna-estadio-bloque::after");
     }
-
-    // ── CARGA DE IMÁGENES ────────────────────────────────────────────────────
+ 
     selectorImagen.addEventListener("change", () => {
       const v = selectorImagen.value;
-      if (!v) {
-        previewImagen.style.display = "none";
-        previewPH.style.display = "";
-        return;
-      }
+      if (!v) { previewImagen.style.display = "none"; previewPH.style.display = ""; return; }
       previewImagen.src = `${API_BASE}/static/imagenes_entrada/${v}?t=${Date.now()}`;
       previewImagen.style.display = "block";
       previewPH.style.display = "none";
     });
-
+ 
     async function cargarImagenes() {
       estado.textContent = "Cargando imágenes disponibles...";
       try {
@@ -957,20 +579,13 @@
         estado.textContent = `Error: ${e.message}`;
       }
     }
-
-    // ── ANÁLISIS ─────────────────────────────────────────────────────────────
+ 
     async function analizarImagen() {
       const nombre = selectorImagen.value;
-      if (!nombre) {
-        estado.textContent = "Selecciona una imagen antes de analizar.";
-        return;
-      }
-
+      if (!nombre) { estado.textContent = "Selecciona una imagen antes de analizar."; return; }
       loadingOverlay.classList.add("visible");
       btnAnalizar.disabled = true;
-
       try {
-        // 1. Modelo de imagen
         const res = await fetch(`${API_BASE}/analizar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -978,33 +593,29 @@
         });
         if (!res.ok) throw new Error("No se pudo analizar la imagen.");
         const data = await res.json();
-
-        resNombreImagen.textContent  = data.imagen || nombre;
-        prediccionTexto.textContent  = data.prediccion || "—";
-        prediccionPct.textContent    = `${Number(data.porcentaje_prediccion).toFixed(2)}%`;
-        prediccionClase.textContent  = obtenerTexto(data.prediccion_clave, data.prediccion);
+ 
+        resNombreImagen.textContent = data.imagen || nombre;
+        prediccionTexto.textContent = data.prediccion || "—";
+        prediccionPct.textContent   = `${Number(data.porcentaje_prediccion).toFixed(2)}%`;
+        prediccionClase.textContent = obtenerTexto(data.prediccion_clave, data.prediccion);
         pintarBarras(data.distribucion || []);
-
+ 
         showImg(imagenEntrada, entradaPH, data.ruta_imagen);
         showImg(imagenGradcam, gradcamPH, data.gradcam?.gradcam);
         showImg(imagenPanel,   panelPH,   data.gradcam?.panel);
-
-        // 2. Perfil RNA
+ 
         try {
           const resRna = await fetch(`${API_BASE}/perfil_rna/${data.prediccion_clave}`);
-          if (resRna.ok) {
-            const rna = await resRna.json();
-            pintarRNA(rna);
-          }
+          if (resRna.ok) { pintarRNA(await resRna.json()); }
         } catch (eRna) {
           console.warn("Perfil RNA no disponible:", eRna);
-          cardRna.style.display = "none";
+          cardRnaGenes.style.display = "none";
+          cardRnaEstadios.style.display = "none";
         }
-
-        screenInicio.style.display     = "none";
+ 
+        screenInicio.style.display = "none";
         screenResultados.style.display = "block";
         window.scrollTo({ top: 0, behavior: "smooth" });
-
       } catch (e) {
         estado.textContent = `Error: ${e.message}`;
       } finally {
@@ -1012,18 +623,18 @@
         btnAnalizar.disabled = false;
       }
     }
-
-    // ── EVENTOS ──────────────────────────────────────────────────────────────
+ 
     btnVolver.addEventListener("click", () => {
       screenResultados.style.display = "none";
-      cardRna.style.display          = "none";
-      screenInicio.style.display     = "grid";
+      cardRnaGenes.style.display = "none";
+      cardRnaEstadios.style.display = "none";
+      screenInicio.style.display = "grid";
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
-
+ 
     btnRecargar.addEventListener("click", cargarImagenes);
     btnAnalizar.addEventListener("click", analizarImagen);
-
+ 
     window.addEventListener("DOMContentLoaded", () => {
       previewImagen.style.display = "none";
       cargarImagenes();

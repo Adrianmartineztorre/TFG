@@ -11,15 +11,20 @@ import json
 import numpy as np
 import tensorflow as tf
 
-from a_Configuracion.config_antiguo import (
+from a_Configuracion.config import (
     BATCH_SIZE,
     EPOCHS_BASELINE,
     MODELOS_DIR,
     MONITOR_METRIC,
 )
 from a_Configuracion.utils import construir_callbacks, fijar_seed
-from c_Data.data_antiguo import get_tf_datasets
+from b_Preprocesado.preprocess import crear_dataset_tf
+from c_Data.data import get_splits
 from d_Modelos.baseline_cnn import construir_modelo_baseline as construir_modelo
+
+
+NOMBRE_MODELO = "baseline_cnn"
+NOMBRE_ARCHIVO_MODELO = "model.best.keras"
 
 
 # ===============================
@@ -67,7 +72,6 @@ def _extraer_mejor_run(history_dict: dict, monitor_metric: str) -> dict:
 
     valores = metricas[monitor_metric]
 
-    # min para loss, max para accuracy
     if "loss" in monitor_metric.lower():
         best_idx = int(np.argmin(valores))
         mode = "min"
@@ -82,16 +86,14 @@ def _extraer_mejor_run(history_dict: dict, monitor_metric: str) -> dict:
         "mode": mode,
         "best_epoch": best_epoch,
         "best_value": float(valores[best_idx]),
+        "epochs_ejecutados": len(valores),
     }
 
-    # métricas en ese epoch
     resumen["metrics"] = {
         k: float(v[best_idx])
         for k, v in metricas.items()
         if best_idx < len(v)
     }
-
-    resumen["epochs_ejecutados"] = len(valores)
 
     return resumen
 
@@ -108,20 +110,33 @@ def main():
     parser.add_argument("--cache", action="store_true")
     args = parser.parse_args()
 
-    # Seed
     fijar_seed()
 
     # ===============================
     # Datos
     # ===============================
-    print("\n📦 Cargando datasets...")
-    train_ds, val_ds, _test_ds, train_df, val_df, _test_df = get_tf_datasets(
-        batch_size=args.batch_size,
-        cache=args.cache,
-    )
+    print("\n📦 Cargando splits...")
+    train_df, val_df, _test_df = get_splits(create_if_missing=True)
 
     print(f"✅ Train samples: {len(train_df)}")
     print(f"✅ Val samples:   {len(val_df)}")
+    print(f"⚙️ Epochs configuradas: {args.epochs}")
+    print(f"⚙️ Batch size configurado: {args.batch_size}")
+
+    print("\n🧪 Construyendo datasets TensorFlow...")
+    train_ds = crear_dataset_tf(
+        train_df,
+        batch_size=args.batch_size,
+        entrenamiento=True,
+        usar_cache=args.cache,
+    )
+
+    val_ds = crear_dataset_tf(
+        val_df,
+        batch_size=args.batch_size,
+        entrenamiento=False,
+        usar_cache=args.cache,
+    )
 
     # ===============================
     # Modelo
@@ -135,16 +150,13 @@ def main():
     # ===============================
     # Carpetas
     # ===============================
-    modelo_dir = MODELOS_DIR / "baseline_cnn"
+    modelo_dir = MODELOS_DIR / NOMBRE_MODELO
     modelo_dir.mkdir(parents=True, exist_ok=True)
 
-    runs_dir = MODELOS_DIR.parent / "RUNS" / "baseline_cnn"
+    runs_dir = MODELOS_DIR.parent / "RUNS" / NOMBRE_MODELO
     runs_dir.mkdir(parents=True, exist_ok=True)
 
-    # ===============================
-    # Ruta modelo (fija)
-    # ===============================
-    model_path = modelo_dir / "model.best.keras"
+    model_path = modelo_dir / NOMBRE_ARCHIVO_MODELO
 
     # ===============================
     # Callbacks
@@ -164,10 +176,13 @@ def main():
         verbose=1,
     )
 
-    history_dict = history.history
+    history_dict = {
+        k: [float(x) for x in v]
+        for k, v in history.history.items()
+    }
 
     # ===============================
-    # Guardar history (normal)
+    # Guardar history
     # ===============================
     history_path = runs_dir / "history.json"
     history_path.write_text(
@@ -179,8 +194,7 @@ def main():
     # Guardar best run
     # ===============================
     best_run = _extraer_mejor_run(history_dict, MONITOR_METRIC)
-
-    best_run["model_name"] = "baseline_cnn"
+    best_run["model_name"] = NOMBRE_MODELO
     best_run["model_path"] = str(model_path)
 
     best_run_path = runs_dir / "best_run.json"
@@ -197,6 +211,7 @@ def main():
     print(f"📦 Mejor modelo: {model_path}")
     print(f"🧾 History: {history_path}")
     print(f"⭐ Best run: {best_run_path}")
+    print(f"📉 Monitor usado: {MONITOR_METRIC}")
 
     if "best_epoch" in best_run:
         print(

@@ -1,9 +1,10 @@
+# gradcam_app.py
 from pathlib import Path
+from typing import Any
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
 from PIL import Image
 
 from config_app import (
@@ -17,25 +18,32 @@ from config_app import (
 from predict import cargar_modelo, cargar_y_preprocesar_imagen, obtener_probabilidades
 
 
-def encontrar_ultima_capa_conv(modelo: tf.keras.Model) -> str:
+def encontrar_ultima_capa_conv(modelo: Any) -> str:
     """
     Busca automáticamente la última capa convolucional del modelo.
+    TensorFlow se importa aquí para evitar ralentizar el arranque de Cloud Run.
     """
+    import tensorflow as tf
+
     for capa in reversed(modelo.layers):
         if isinstance(capa, tf.keras.layers.Conv2D):
             return capa.name
+
     raise ValueError("No se encontró ninguna capa Conv2D en el modelo.")
 
 
 def generar_heatmap_gradcam(
-    modelo: tf.keras.Model,
+    modelo: Any,
     img_batch: np.ndarray,
     nombre_capa_conv: str,
     class_index: int,
 ) -> np.ndarray:
     """
     Genera el heatmap Grad-CAM para una clase concreta.
+    TensorFlow se importa aquí para evitar ralentizar el arranque de Cloud Run.
     """
+    import tensorflow as tf
+
     img_tensor = tf.convert_to_tensor(img_batch, dtype=tf.float32)
 
     entradas = tf.keras.Input(shape=img_batch.shape[1:])
@@ -119,7 +127,10 @@ def extraer_region_principal(
     """
     mask = (heatmap_resized >= threshold).astype("uint8") * 255
 
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        mask,
+        connectivity=8,
+    )
 
     if num_labels <= 1:
         return mask, None, None
@@ -137,7 +148,11 @@ def extraer_region_principal(
         return mask, None, None
 
     mask_principal = np.where(labels == mejor_idx, 255, 0).astype("uint8")
-    contours, _ = cv2.findContours(mask_principal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        mask_principal,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE,
+    )
 
     if not contours:
         return mask_principal, None, None
@@ -162,6 +177,7 @@ def dibujar_bounding_box(
 
     x, y, w, h = bbox
     cv2.rectangle(salida, (x, y), (x + w, y + h), (255, 0, 0), 3)
+
     return salida
 
 
@@ -177,7 +193,14 @@ def dibujar_contorno(
     if contorno is None:
         return salida
 
-    cv2.drawContours(salida, [contorno], contourIdx=-1, color=(255, 0, 0), thickness=3)
+    cv2.drawContours(
+        salida,
+        [contorno],
+        contourIdx=-1,
+        color=(255, 0, 0),
+        thickness=3,
+    )
+
     return salida
 
 
@@ -238,9 +261,6 @@ def generar_gradcam_app(
 ) -> dict:
     """
     Genera Grad-CAM para una imagen de la app.
-
-    Si class_index no se indica, usa la clase predicha por el modelo.
-    Si se indica, fuerza Grad-CAM sobre esa clase.
     """
     ruta_imagen = Path(ruta_imagen)
 

@@ -5,19 +5,20 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import argparse
-import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 from a_Configuracion.config import (
     SEED,
     MODELOS_DIR,
     FIGURAS_DIR,
+    RUTA_OUTPUTS,
     BATCH_SIZE,
     CLAVES_CLASES,
 )
@@ -69,10 +70,6 @@ def _pasar_a_indices(etiquetas_raw):
 
 
 def _crear_dataset(df, col_ruta, col_etiqueta, batch_size=32, cache=False):
-    """
-    Adapta el dataframe al formato esperado por preprocess.crear_dataset_tf:
-    columnas obligatorias -> filepath, label
-    """
     df_modelo = df[[col_ruta, col_etiqueta]].copy()
     df_modelo.columns = ["filepath", "label"]
 
@@ -94,44 +91,127 @@ def _top_k(pred_vector, k=3):
     return [(CLAVES_CLASES[i], float(pred_vector[i])) for i in idxs]
 
 
-def _guardar_json(path: Path, data: dict):
-    path.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-
-
 def _copiar_muestras_error(df_errores, out_dir: Path, max_por_confusion=5):
-    """
-    Copia unas pocas imágenes mal clasificadas para revisión visual.
-    """
     try:
         import shutil
 
         out_dir.mkdir(parents=True, exist_ok=True)
-
         conteo = {}
 
         for _, row in df_errores.iterrows():
-            clave = f"{row['clase_real']}__a__{row['clase_predicha']}"
+            clave = f"{row['era_en_verdad']}__a__{row['predijo']}"
             conteo.setdefault(clave, 0)
 
             if conteo[clave] >= max_por_confusion:
                 continue
 
-            src = Path(row["ruta"])
+            src = Path(row["ruta_imagen"])
             if not src.exists():
                 continue
 
             subdir = out_dir / clave
             subdir.mkdir(parents=True, exist_ok=True)
 
-            dst = subdir / src.name
-            shutil.copy2(src, dst)
+            shutil.copy2(src, subdir / src.name)
             conteo[clave] += 1
 
     except Exception as e:
         print(f"⚠️ No se pudieron copiar muestras de error: {e}")
+
+
+def _guardar_tabla_confusiones_academica(
+    confusiones,
+    save_path,
+    accuracy,
+    total_errores,
+    total_muestras,
+    tasa_error,
+    top_n=10,
+):
+    tabla = confusiones.head(top_n).copy()
+
+    tabla = tabla.rename(
+        columns={
+            "era_en_verdad": "Clase real",
+            "predijo": "Clase predicha",
+            "n": "Nº errores",
+        }
+    )
+
+    fig, ax = plt.subplots(figsize=(9.2, 4.6))
+    ax.axis("off")
+
+    ax.text(
+        0.5,
+        0.97,
+        "Confusiones más frecuentes registradas en el conjunto de prueba",
+        transform=ax.transAxes,
+        fontsize=14,
+        fontweight="bold",
+        ha="center",
+        va="top",
+    )
+
+    texto_metricas = (
+        f"Accuracy:   {accuracy:.4f}\n"
+        f"Nº errores: {total_errores}/{total_muestras} ({tasa_error:.4%})"
+    )
+
+    ax.text(
+        0.02,
+        0.82,
+        texto_metricas,
+        transform=ax.transAxes,
+        fontsize=11,
+        ha="left",
+        va="top",
+        family="monospace",
+    )
+
+    tabla_plot = ax.table(
+        cellText=tabla.values,
+        colLabels=tabla.columns,
+        cellLoc="center",
+        colLoc="center",
+        bbox=[0.02, 0.05, 0.96, 0.66],
+    )
+
+    tabla_plot.auto_set_font_size(False)
+    tabla_plot.set_fontsize(11)
+    tabla_plot.scale(1, 1.75)
+
+    for (fila, columna), celda in tabla_plot.get_celld().items():
+        celda.set_edgecolor("#333333")
+        celda.set_linewidth(0.6)
+        celda.set_facecolor("white")
+        celda.PAD = 0.15
+
+        if fila == 0:
+            celda.set_text_props(
+                weight="bold",
+                fontsize=11.5,
+                ha="center",
+                va="center",
+                fontfamily="sans-serif",
+            )
+            celda.set_linewidth(0.9)
+        else:
+            celda.set_text_props(
+                weight="normal",
+                fontsize=11,
+                ha="center",
+                va="center",
+                fontfamily="sans-serif",
+            )
+
+    plt.tight_layout()
+    plt.savefig(
+        save_path,
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
+    plt.close()
 
 
 # =========================================================
@@ -139,7 +219,7 @@ def _copiar_muestras_error(df_errores, out_dir: Path, max_por_confusion=5):
 # =========================================================
 def main():
     parser = argparse.ArgumentParser(description="Analizar fallos del modelo")
-    parser.add_argument("--modelo", type=str, default="cnn_vgg_opt")
+    parser.add_argument("--modelo", type=str, default="cnn_vgg_optimizado")
     parser.add_argument("--split", type=str, default="test", choices=["train", "val", "test"])
     parser.add_argument("--batch_size", type=int, default=BATCH_SIZE)
     parser.add_argument("--cache", action="store_true")
@@ -148,9 +228,6 @@ def main():
 
     fijar_seed()
 
-    # -----------------------------------------------------
-    # Cargar splits
-    # -----------------------------------------------------
     train_df, val_df, test_df = get_splits()
 
     if args.split == "train":
@@ -168,9 +245,6 @@ def main():
     print(f"✅ Columna ruta: {col_ruta}")
     print(f"✅ Columna etiqueta: {col_etiqueta}")
 
-    # -----------------------------------------------------
-    # Dataset
-    # -----------------------------------------------------
     ds, rutas, y_true = _crear_dataset(
         df,
         col_ruta=col_ruta,
@@ -179,9 +253,6 @@ def main():
         cache=args.cache,
     )
 
-    # -----------------------------------------------------
-    # Modelo
-    # -----------------------------------------------------
     model_path = MODELOS_DIR / args.modelo / "model.best.keras"
     if not model_path.exists():
         raise FileNotFoundError(f"No se encontró el modelo: {model_path}")
@@ -189,9 +260,6 @@ def main():
     print(f"🧠 Cargando modelo: {model_path}")
     model = tf.keras.models.load_model(model_path)
 
-    # -----------------------------------------------------
-    # Predicción
-    # -----------------------------------------------------
     print("🚀 Generando predicciones...")
     y_prob = model.predict(ds, verbose=1)
     y_pred = np.argmax(y_prob, axis=1)
@@ -201,41 +269,28 @@ def main():
             f"Desajuste entre predicciones ({len(y_pred)}) y etiquetas reales ({len(y_true)})."
         )
 
-    # -----------------------------------------------------
-    # Métricas globales
-    # -----------------------------------------------------
     acc = float((y_pred == y_true).mean())
-    cm = confusion_matrix(y_true, y_pred)
-    report = classification_report(
-        y_true,
-        y_pred,
-        target_names=CLAVES_CLASES,
-        output_dict=True,
-        zero_division=0,
-    )
+    total = len(y_true)
+    total_errores = int((y_pred != y_true).sum())
+    tasa_error = float(total_errores / total) if total > 0 else 0.0
 
-    # -----------------------------------------------------
-    # Errores detallados
-    # -----------------------------------------------------
+    cm = confusion_matrix(y_true, y_pred)
+
     filas_error = []
 
     for i in range(len(y_true)):
         if y_true[i] == y_pred[i]:
             continue
 
-        prob_real = float(y_prob[i][y_true[i]])
-        prob_pred = float(y_prob[i][y_pred[i]])
         top3 = _top_k(y_prob[i], k=3)
 
         filas_error.append({
             "indice": i,
-            "ruta": rutas[i],
-            "clase_real_idx": int(y_true[i]),
-            "clase_real": CLAVES_CLASES[y_true[i]],
-            "clase_predicha_idx": int(y_pred[i]),
-            "clase_predicha": CLAVES_CLASES[y_pred[i]],
-            "prob_clase_real": prob_real,
-            "prob_clase_predicha": prob_pred,
+            "ruta_imagen": rutas[i],
+            "era_en_verdad": CLAVES_CLASES[y_true[i]],
+            "predijo": CLAVES_CLASES[y_pred[i]],
+            "probabilidad_clase_real": float(y_prob[i][y_true[i]]),
+            "probabilidad_clase_predicha": float(y_prob[i][y_pred[i]]),
             "confianza_prediccion": float(np.max(y_prob[i])),
             "top1_clase": top3[0][0],
             "top1_prob": top3[0][1],
@@ -248,46 +303,22 @@ def main():
 
     df_errores = pd.DataFrame(filas_error)
 
-    # -----------------------------------------------------
-    # Resumen de fallos
-    # -----------------------------------------------------
-    total = len(y_true)
-    total_errores = len(df_errores)
-    tasa_error = float(total_errores / total) if total > 0 else 0.0
-
     if total_errores > 0:
         confusiones = (
             df_errores
-            .groupby(["clase_real", "clase_predicha"])
+            .groupby(["era_en_verdad", "predijo"])
             .size()
             .reset_index(name="n")
             .sort_values("n", ascending=False)
         )
 
-        errores_por_clase_real = (
-            df_errores
-            .groupby("clase_real")
-            .size()
-            .reset_index(name="n_errores")
-            .sort_values("n_errores", ascending=False)
-        )
-
-        confianza_media_error = float(df_errores["confianza_prediccion"].mean())
-        margen_medio = float(df_errores["margen_top1_top2"].mean())
-
         errores_alta_confianza = int((df_errores["confianza_prediccion"] >= 0.80).sum())
         errores_baja_separacion = int((df_errores["margen_top1_top2"] <= 0.15).sum())
     else:
-        confusiones = pd.DataFrame(columns=["clase_real", "clase_predicha", "n"])
-        errores_por_clase_real = pd.DataFrame(columns=["clase_real", "n_errores"])
-        confianza_media_error = 0.0
-        margen_medio = 0.0
+        confusiones = pd.DataFrame(columns=["era_en_verdad", "predijo", "n"])
         errores_alta_confianza = 0
         errores_baja_separacion = 0
 
-    # -----------------------------------------------------
-    # Hipótesis automáticas para discusión
-    # -----------------------------------------------------
     hipotesis = []
 
     if total_errores == 0:
@@ -305,11 +336,10 @@ def main():
                 "Muchos errores presentan poca diferencia entre top-1 y top-2, lo que sugiere fronteras de decisión próximas entre clases histológicamente similares."
             )
 
-        if len(confusiones) > 0:
-            top_conf = confusiones.iloc[0]
-            hipotesis.append(
-                f"La confusión más frecuente es '{top_conf['clase_real']}' → '{top_conf['clase_predicha']}', por lo que esa pareja debería revisarse visualmente en trabajos futuros."
-            )
+        top_conf = confusiones.iloc[0]
+        hipotesis.append(
+            f"La confusión más frecuente es '{top_conf['era_en_verdad']}' → '{top_conf['predijo']}', por lo que esa pareja debería revisarse visualmente en trabajos futuros."
+        )
 
         hipotesis.append(
             "Sería recomendable revisar manualmente los casos fallados para identificar artefactos de tinción, calidad de imagen, zonas con poco tejido representativo o similitud morfológica entre clases."
@@ -319,66 +349,75 @@ def main():
             "Como trabajo futuro, sería útil incorporar análisis por paciente, por slide o por origen de parche para comprobar si ciertos fallos están asociados a distribución de datos o a variabilidad biológica."
         )
 
-    # -----------------------------------------------------
-    # Guardado único
-    # -----------------------------------------------------
-    out_dir = Path("OUTPUT") / "ERRORES" / args.modelo
+    ERRORES_DIR = RUTA_OUTPUTS / "ERRORES"
+    out_dir = ERRORES_DIR / args.modelo / args.split
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = out_dir / f"analisis_errores_{args.split}.json"
+    informe_path = out_dir / f"informe_errores_{args.modelo}_{args.split}.txt"
+    tabla_confusiones_img_path = out_dir / f"tabla_confusiones_frecuentes_{args.modelo}_{args.split}.png"
 
-    output = {
-        "info_general": {
-            "modelo": args.modelo,
-            "split": args.split,
-            "model_path": str(model_path),
-            "n_muestras": int(total),
-            "accuracy": acc,
-            "n_errores": int(total_errores),
-            "tasa_error": tasa_error,
-        },
-        "metricas_error": {
-            "confianza_media_en_errores": confianza_media_error,
-            "margen_top1_top2_medio_en_errores": margen_medio,
-            "errores_alta_confianza": errores_alta_confianza,
-            "errores_baja_separacion_top1_top2": errores_baja_separacion,
-        },
-        "clasificacion": {
-            "classification_report": report,
-            "confusion_matrix": cm.tolist(),
-        },
-        "analisis_fallos": {
-            "top_confusiones": confusiones.to_dict(orient="records"),
-            "errores_por_clase_real": errores_por_clase_real.to_dict(orient="records"),
-        },
-        "errores_detallados": df_errores.to_dict(orient="records"),
-        "hipotesis_trabajo_futuro": hipotesis,
-    }
+    if total_errores > 0:
+        _guardar_tabla_confusiones_academica(
+            confusiones=confusiones,
+            save_path=tabla_confusiones_img_path,
+            accuracy=acc,
+            total_errores=total_errores,
+            total_muestras=total,
+            tasa_error=tasa_error,
+            top_n=10,
+        )
 
-    _guardar_json(output_path, output)
+    with open(informe_path, "w", encoding="utf-8") as f:
+        f.write(f"Accuracy:   {acc:.4f}\n")
+        f.write(f"Nº errores: {total_errores}/{total} ({tasa_error:.4%})\n\n")
 
-    # -----------------------------------------------------
-    # Copia opcional de imágenes falladas
-    # -----------------------------------------------------
+        f.write("Confusiones más frecuentes:\n")
+        if total_errores > 0:
+            f.write(
+                confusiones
+                .rename(columns={
+                    "era_en_verdad": "clase_real",
+                    "predijo": "clase_predicha",
+                })
+                .to_string(index=False)
+            )
+        else:
+            f.write("No se observaron errores en el split analizado.")
+
+        f.write("\n\n")
+        f.write("Hipótesis para discusión / trabajo futuro:\n")
+
+        for h in hipotesis:
+            f.write(f"- {h}\n")
+
     if args.guardar_imagenes_error and total_errores > 0:
-        fallos_dir = FIGURAS_DIR / args.modelo / f"fallos_{args.split}"
+        fallos_dir = ERRORES_DIR / args.modelo / args.split / "imagenes_falladas"
         _copiar_muestras_error(df_errores, fallos_dir, max_por_confusion=5)
         print(f"🖼️ Imágenes de fallos copiadas en: {fallos_dir}")
 
-    # -----------------------------------------------------
-    # Print final
-    # -----------------------------------------------------
     print("\n" + "=" * 70)
     print("✅ ANÁLISIS DE FALLOS FINALIZADO")
     print("=" * 70)
-    print(f"📄 Archivo generado: {output_path}")
+    print(f"📄 Informe generado: {informe_path}")
+
+    if total_errores > 0:
+        print(f"🖼️ Tabla académica generada: {tabla_confusiones_img_path}")
+
     print()
     print(f"Accuracy:   {acc:.4f}")
     print(f"Nº errores: {total_errores}/{total} ({tasa_error:.4%})")
 
     if total_errores > 0:
         print("\nConfusiones más frecuentes:")
-        print(confusiones.head(10).to_string(index=False))
+        print(
+            confusiones
+            .rename(columns={
+                "era_en_verdad": "clase_real",
+                "predijo": "clase_predicha",
+            })
+            .head(10)
+            .to_string(index=False)
+        )
 
         print("\nHipótesis para discusión / trabajo futuro:")
         for h in hipotesis:

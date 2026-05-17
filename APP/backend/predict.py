@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-import tensorflow as tf
 from PIL import Image
 
 from config_app import (
@@ -18,9 +17,10 @@ from config_app import (
 _modelo = None
 
 
-def cargar_modelo() -> tf.keras.Model:
+def cargar_modelo():
     """
-    Carga el modelo una sola vez y lo reutiliza.
+    Carga el modelo solo cuando se necesita.
+    Esto evita que TensorFlow ralentice el arranque de Cloud Run.
     """
     global _modelo
 
@@ -28,6 +28,7 @@ def cargar_modelo() -> tf.keras.Model:
         if not MODELO_PATH.exists():
             raise FileNotFoundError(f"No existe el modelo en:\n{MODELO_PATH}")
 
+        import tensorflow as tf
         _modelo = tf.keras.models.load_model(MODELO_PATH)
 
     return _modelo
@@ -37,10 +38,6 @@ def cargar_y_preprocesar_imagen(ruta_imagen: str | Path) -> tuple[np.ndarray, np
     """
     Carga una imagen desde disco y aplica el mismo preprocesado
     usado durante el entrenamiento.
-
-    Devuelve:
-    - img_visual: imagen uint8 para mostrar
-    - img_batch: imagen preparada para el modelo con shape (1, H, W, C)
     """
     ruta_imagen = Path(ruta_imagen)
 
@@ -56,12 +53,13 @@ def cargar_y_preprocesar_imagen(ruta_imagen: str | Path) -> tuple[np.ndarray, np
     media = np.array(MEDIA_IMAGEN, dtype=np.float32)
     desv = np.array(DESV_IMAGEN, dtype=np.float32)
     img_modelo = (img_modelo - media) / desv
+
     img_batch = np.expand_dims(img_modelo, axis=0)
 
     return img_visual, img_batch
 
 
-def obtener_probabilidades(modelo: tf.keras.Model, img_batch: np.ndarray) -> np.ndarray:
+def obtener_probabilidades(modelo, img_batch: np.ndarray) -> np.ndarray:
     """
     Devuelve el vector de probabilidades del modelo.
     """
@@ -71,10 +69,7 @@ def obtener_probabilidades(modelo: tf.keras.Model, img_batch: np.ndarray) -> np.
 
 def construir_resultados_probabilidades(probs: np.ndarray) -> dict:
     """
-    Construye la distribución de porcentajes:
-    - elimina valores menores del umbral
-    - muestra como máximo N resultados
-    - siempre conserva la predicción principal
+    Construye la distribución de porcentajes.
     """
     idx_pred = int(np.argmax(probs))
     clave_pred = CLAVES_CLASES[idx_pred]
@@ -123,9 +118,9 @@ def construir_resultados_probabilidades(probs: np.ndarray) -> dict:
 def predecir_imagen(ruta_imagen: str | Path) -> dict:
     """
     Función principal de inferencia.
-    Devuelve un diccionario listo para usar en la app.
     """
     modelo = cargar_modelo()
+
     _, img_batch = cargar_y_preprocesar_imagen(ruta_imagen)
     probs = obtener_probabilidades(modelo, img_batch)
     resultados = construir_resultados_probabilidades(probs)

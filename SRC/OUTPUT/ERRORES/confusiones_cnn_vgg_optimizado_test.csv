@@ -1,0 +1,6 @@
+﻿era_en_verdad,predijo,n
+lung_aca,lung_scc,15
+lung_scc,lung_aca,5
+colon_aca,lung_scc,2
+colon_aca,colon_n,1
+colon_n,colon_aca,1

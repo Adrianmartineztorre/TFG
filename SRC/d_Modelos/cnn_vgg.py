@@ -6,7 +6,7 @@ manteniendo una extracción jerárquica de características.
 
 import tensorflow as tf
 
-from a_Configuracion.config_antiguo import (
+from a_Configuracion.config import (
     IMAGEN_SHAPE,
     NUM_CLASES,
     TASA_APRENDIZAJE_CNN_VGG,

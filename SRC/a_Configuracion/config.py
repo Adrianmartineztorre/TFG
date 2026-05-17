@@ -74,7 +74,7 @@ assert abs((TRAIN_SPLIT + VAL_SPLIT + TEST_SPLIT) - 1.0) < 1e-9, "Los splits deb
 # ==============================
 BATCH_SIZE = 32
 
-EPOCHS_BASELINE = 20
+EPOCHS_BASELINE = 15
 EPOCHS_TRANSFER = 20
 
 TASA_APRENDIZAJE_BASELINE = 1e-3
@@ -84,7 +84,7 @@ TASA_APRENDIZAJE_TRANSFER = 1e-4
 # Parámetros específicos cnn_vgg
 # ==============================
 BATCH_SIZE_CNN_VGG = 16
-EPOCHS_CNN_VGG = 20
+EPOCHS_CNN_VGG = 25
 TASA_APRENDIZAJE_CNN_VGG = 1e-4
 
 # ==============================

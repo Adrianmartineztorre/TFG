@@ -41,7 +41,13 @@ CLASES = {
     "colon_aca": "Adenocarcinoma de colon",
 }
 
-CLAVES_CLASES = ["lung_n", "lung_aca", "lung_scc", "colon_n", "colon_aca"]
+CLAVES_CLASES = [
+    "lung_n",
+    "lung_aca",
+    "lung_scc",
+    "colon_n",
+    "colon_aca",
+]
 
 CLASES_CORTAS = {
     "lung_n": "Pulmón normal",
@@ -63,4 +69,35 @@ DESV_IMAGEN = [0.229, 0.224, 0.225]
 
 # =========================================================
 # GRADCAM CONFIG
-# ==============================================
+# =========================================================
+GRADCAM_ALPHA = 0.40
+GRADCAM_THRESHOLD = 0.60
+GRADCAM_MIN_AREA = 80
+
+# =========================================================
+# FILTRO DE PROBABILIDADES (UI)
+# =========================================================
+UMBRAL_PROBABILIDAD = 0.1
+MAX_RESULTADOS = 3
+
+# =========================================================
+# EXTENSIONES PERMITIDAS
+# =========================================================
+EXTENSIONES_VALIDAS = [
+    ".png",
+    ".jpg",
+    ".jpeg",
+]
+
+# =========================================================
+# ARCHIVOS QUE NO SON MUESTRAS (CLAVE)
+# =========================================================
+ARCHIVOS_EXCLUIDOS = {
+    "favicon.png",
+    "vista_previa.jpeg",
+}
+
+# =========================================================
+# DEBUG / CONTROL
+# =========================================================
+DEBUG = True

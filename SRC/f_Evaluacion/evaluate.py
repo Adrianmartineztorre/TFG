@@ -32,27 +32,18 @@ from c_Data.data import get_splits
 from b_Preprocesado.preprocess import crear_dataset_tf
 
 
-# ===============================
-# Modelos permitidos
-# ===============================
 MODELOS_DISPONIBLES = [
     "baseline_cnn",
     "cnn_bn",
     "cnn_bn_dropout",
-    "efficientnet_b0",
     "cnn_vgg",
-    "cnn_vgg_opt",
+    "cnn_vgg_optimizado",
 ]
 
 NOMBRE_MODELO_ARCHIVO = "model.best.keras"
 
 
 def _asegurar_carpetas_modelo(nombre_modelo: str):
-    """
-    Crea carpetas separadas por modelo para guardar resultados:
-    - FIGURAS/<nombre_modelo>/
-    - METRICAS/<nombre_modelo>/
-    """
     figuras_modelo_dir = FIGURAS_DIR / nombre_modelo
     metricas_modelo_dir = METRICAS_DIR / nombre_modelo
 
@@ -63,9 +54,6 @@ def _asegurar_carpetas_modelo(nombre_modelo: str):
 
 
 def _elegir_modelo(modelo_argumento: str | None = None) -> str:
-    """
-    Obliga a escoger uno de los modelos definidos en MODELOS_DISPONIBLES.
-    """
     if modelo_argumento is not None:
         modelo_argumento = modelo_argumento.strip()
         if modelo_argumento not in MODELOS_DISPONIBLES:
@@ -95,50 +83,25 @@ def _elegir_modelo(modelo_argumento: str | None = None) -> str:
 
 
 def _resolver_ruta_modelo(nombre_modelo: str) -> Path:
-    """
-    Busca el modelo en:
-    MODELOS_DIR/<nombre_modelo>/model.best.keras
-    """
     model_path = MODELOS_DIR / nombre_modelo / NOMBRE_MODELO_ARCHIVO
 
     if model_path.exists():
         return model_path
 
-    raise FileNotFoundError(
-        f"No se encontró el modelo en:\n{model_path}"
-    )
+    raise FileNotFoundError(f"No se encontró el modelo en:\n{model_path}")
 
 
 def _cargar_modelo(nombre_modelo: str, model_path: Path):
-    """
-    Carga el modelo normalmente.
-    Si falla para EfficientNetB0, reconstruye la arquitectura y carga pesos
-    desde el mismo archivo model.best.keras.
-    """
-    try:
-        return tf.keras.models.load_model(model_path)
-    except Exception as e:
-        if nombre_modelo == "efficientnet_b0":
-            print("⚠️ No se pudo cargar EfficientNetB0 como modelo completo.")
-            print(f"   Motivo: {e}")
-            print("🔄 Reconstruyendo arquitectura y cargando pesos...")
+    print(f"🔄 Cargando modelo: {nombre_modelo}")
+    print(f"📌 Desde: {model_path}")
 
-            from d_Modelos.efficientnet_b0 import (
-                construir_modelo_efficientnet_b0 as construir_modelo
-            )
+    modelo = tf.keras.models.load_model(model_path)
 
-            modelo = construir_modelo()
-            modelo.load_weights(model_path)
-            print("✅ EfficientNetB0 cargado como arquitectura + pesos.")
-            return modelo
-
-        raise
+    print("✅ Modelo cargado correctamente.")
+    return modelo
 
 
 def _buscar_history_para_modelo(nombre_modelo: str) -> Path | None:
-    """
-    Busca un history relacionado con el modelo dentro de OUTPUT/RUNS.
-    """
     runs_dir = FIGURAS_DIR.parent / "RUNS"
 
     if not runs_dir.exists():
@@ -158,6 +121,7 @@ def _buscar_history_para_modelo(nombre_modelo: str) -> Path | None:
 
     unicos = []
     vistos = set()
+
     for c in candidatos:
         if c.exists() and c not in vistos:
             unicos.append(c)
@@ -170,9 +134,6 @@ def _buscar_history_para_modelo(nombre_modelo: str) -> Path | None:
 
 
 def _buscar_best_run_para_modelo(nombre_modelo: str) -> Path | None:
-    """
-    Busca el best_run.json dentro de OUTPUT/RUNS/<modelo>/.
-    """
     runs_dir_modelo = FIGURAS_DIR.parent / "RUNS" / nombre_modelo
 
     if not runs_dir_modelo.exists():
@@ -192,9 +153,12 @@ def _cargar_history(path_history: Path | None):
 
     try:
         data = json.loads(path_history.read_text(encoding="utf-8"))
+
         if "history" in data and isinstance(data["history"], dict):
             return data["history"]
+
         return data if isinstance(data, dict) else None
+
     except Exception:
         return None
 
@@ -208,6 +172,60 @@ def _cargar_best_run(path_best_run: Path | None):
         return data if isinstance(data, dict) else None
     except Exception:
         return None
+
+
+def guardar_curvas_entrenamiento(
+    history: dict | None,
+    nombre_modelo: str,
+    ruta_salida_dir: Path,
+):
+    """
+    Guarda las curvas de entrenamiento en:
+    OUTPUT/Curvas/<nombre_modelo>/
+
+    - curva_accuracy_<modelo>.png
+    - curva_loss_<modelo>.png
+    """
+    if not history:
+        print("⚠️ No se encontró history. No se generan curvas de entrenamiento.")
+        return None, None
+
+    ruta_salida_dir.mkdir(parents=True, exist_ok=True)
+
+    ruta_acc = None
+    ruta_loss = None
+
+    if "accuracy" in history and "val_accuracy" in history:
+        ruta_acc = ruta_salida_dir / f"curva_accuracy_{nombre_modelo}.png"
+
+        plt.figure(figsize=(8, 5))
+        plt.plot(history["accuracy"], label="Train accuracy")
+        plt.plot(history["val_accuracy"], label="Validation accuracy")
+        plt.xlabel("Época")
+        plt.ylabel("Accuracy")
+        plt.title(f"Evolución de accuracy - {nombre_modelo}")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(ruta_acc, dpi=200)
+        plt.close()
+
+    if "loss" in history and "val_loss" in history:
+        ruta_loss = ruta_salida_dir / f"curva_loss_{nombre_modelo}.png"
+
+        plt.figure(figsize=(8, 5))
+        plt.plot(history["loss"], label="Train loss")
+        plt.plot(history["val_loss"], label="Validation loss")
+        plt.xlabel("Época")
+        plt.ylabel("Loss")
+        plt.title(f"Evolución de loss - {nombre_modelo}")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(ruta_loss, dpi=200)
+        plt.close()
+
+    return ruta_acc, ruta_loss
 
 
 def _extraer_info_training(history: dict | None):
@@ -291,6 +309,7 @@ def guardar_matriz_confusion(
         linewidths=0.5,
         linecolor="black",
     )
+
     plt.xlabel("Etiquetas predichas")
     plt.ylabel("Etiquetas reales")
     plt.title("Matriz de confusión (Multiclase)")
@@ -361,11 +380,15 @@ def _tabla_metricas_imagen(
         f"Distribución (y_pred): {info_extra['distribucion_pred']}\n"
         f"Parámetros modelo: {info_extra['num_params']}\n"
         f"Epochs ejecutados: {info_extra.get('epochs_ejecutados', 'N/A')}\n"
-        f"Mejor epoch (val_loss): {info_extra.get('best_epoch_val_loss', 'N/A')} | val_loss: {info_extra.get('best_val_loss', 'N/A')}\n"
-        f"Mejor epoch (val_acc): {info_extra.get('best_epoch_val_acc', 'N/A')} | val_acc: {info_extra.get('best_val_acc', 'N/A')}\n"
+        f"Mejor epoch (val_loss): {info_extra.get('best_epoch_val_loss', 'N/A')} | "
+        f"val_loss: {info_extra.get('best_val_loss', 'N/A')}\n"
+        f"Mejor epoch (val_acc): {info_extra.get('best_epoch_val_acc', 'N/A')} | "
+        f"val_acc: {info_extra.get('best_val_acc', 'N/A')}\n"
         f"Best run metric: {info_extra.get('monitor_metric', 'N/A')}\n"
-        f"Best epoch (global): {info_extra.get('best_epoch', 'N/A')} | value: {info_extra.get('best_value', 'N/A')}\n"
+        f"Best epoch (global): {info_extra.get('best_epoch', 'N/A')} | "
+        f"value: {info_extra.get('best_value', 'N/A')}\n"
     )
+
     plt.text(0.01, 0.88, extra_txt, fontsize=11, family="monospace", va="top")
 
     table = plt.table(
@@ -374,7 +397,7 @@ def _tabla_metricas_imagen(
         loc="lower left",
         cellLoc="center",
         colLoc="center",
-        bbox=[0.01, 0.10, 0.98, 0.52]
+        bbox=[0.01, 0.10, 0.98, 0.52],
     )
 
     table.auto_set_font_size(False)
@@ -394,6 +417,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Evaluación multiclase de modelos entrenados"
     )
+
     parser.add_argument(
         "--modelo",
         type=str,
@@ -401,12 +425,14 @@ def main():
         choices=MODELOS_DISPONIBLES,
         help="Nombre del modelo a evaluar",
     )
+
     parser.add_argument(
         "--split",
         type=str,
         default="test",
         choices=["train", "val", "test"],
     )
+
     parser.add_argument("--batch_size", type=int, default=None)
     parser.add_argument("--cache", action="store_true")
     parser.add_argument("--cmap", type=str, default="viridis")
@@ -423,6 +449,7 @@ def main():
     modelo = _cargar_modelo(nombre_modelo, model_path)
 
     batch_size = args.batch_size if args.batch_size else BATCH_SIZE
+
     train_df, val_df, test_df = get_splits(create_if_missing=True)
 
     if args.split == "train":
@@ -448,6 +475,7 @@ def main():
     distrib_pred = {int(k): int(v) for k, v in zip(unique_pred, counts_pred)}
 
     ruta_cm = figuras_modelo_dir / f"matriz_confusion_{nombre_modelo}_{args.split}.png"
+
     guardar_matriz_confusion(
         y_true,
         y_pred,
@@ -463,10 +491,18 @@ def main():
         output_dict=True,
         zero_division=0,
     )
+
     accuracy = float(accuracy_score(y_true, y_pred))
 
     path_history = _buscar_history_para_modelo(nombre_modelo)
     history = _cargar_history(path_history)
+
+    curvas_dir = FIGURAS_DIR.parent / "Curvas" / nombre_modelo
+    ruta_curva_acc, ruta_curva_loss = guardar_curvas_entrenamiento(
+        history=history,
+        nombre_modelo=nombre_modelo,
+        ruta_salida_dir=curvas_dir,
+    )
 
     path_best_run = _buscar_best_run_para_modelo(nombre_modelo)
     best_run = _cargar_best_run(path_best_run)
@@ -518,6 +554,7 @@ def main():
     }
 
     ruta_tabla = metricas_modelo_dir / f"tabla_metricas_{nombre_modelo}_{args.split}.png"
+
     _tabla_metricas_imagen(
         reporte_dict=reporte_dict,
         accuracy=accuracy,
@@ -526,6 +563,7 @@ def main():
     )
 
     resumen_json = metricas_modelo_dir / f"metricas_{nombre_modelo}_{args.split}.json"
+
     resumen = {
         "modelo": nombre_modelo,
         "ruta_modelo": str(model_path),
@@ -541,8 +579,11 @@ def main():
         "best_run_path": str(path_best_run) if path_best_run else None,
         "matriz_confusion_png": str(ruta_cm),
         "tabla_metricas_png": str(ruta_tabla),
+        "curva_accuracy_png": str(ruta_curva_acc) if ruta_curva_acc else None,
+        "curva_loss_png": str(ruta_curva_loss) if ruta_curva_loss else None,
         **info_train,
     }
+
     resumen_json.write_text(
         json.dumps(resumen, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -557,6 +598,8 @@ def main():
     print(f"🎯 Accuracy: {accuracy:.3f}")
     print(f"🖼️ Matriz de confusión: {ruta_cm}")
     print(f"🧾 Tabla métricas (PNG): {ruta_tabla}")
+    print(f"📈 Curva accuracy: {ruta_curva_acc if ruta_curva_acc else 'NO GENERADA'}")
+    print(f"📉 Curva loss: {ruta_curva_loss if ruta_curva_loss else 'NO GENERADA'}")
     print(f"📄 JSON métricas: {resumen_json}")
 
     if best_run and "best_epoch" in best_run:

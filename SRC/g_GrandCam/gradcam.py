@@ -1,8 +1,8 @@
 """
-Grad-CAM para el modelo cnn_vgg_opt entrenado.
+Grad-CAM para el modelo cnn_vgg_optimizado entrenado.
 
 Este script:
-- Carga el modelo guardado en OUTPUT/MODELOS/cnn_vgg_opt/model.best.keras
+- Carga el modelo guardado en OUTPUT/MODELOS/cnn_vgg_optimizado/model.best.keras
 - Pide al usuario la ruta de una imagen
 - Predice la clase
 - Genera Grad-CAM usando la última capa convolucional
@@ -12,7 +12,7 @@ Este script:
     2) heatmap superpuesto
     3) imagen con bounding box
     4) imagen con contorno
-    5) figura combinada con las 4 imágenes
+    5) figura combinada académica con las 4 imágenes
     6) txt con resultados
 """
 
@@ -24,7 +24,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from a_Configuracion.config_antiguo import (
+from a_Configuracion.config import (
     CLAVES_CLASES,
     DESV_IMAGEN,
     MEDIA_IMAGEN,
@@ -34,7 +34,7 @@ from a_Configuracion.config_antiguo import (
 )
 
 
-MODELO_PATH = MODELOS_DIR / "cnn_vgg_opt" / "model.best.keras"
+MODELO_PATH = MODELOS_DIR / "cnn_vgg_optimizado" / "model.best.keras"
 SALIDA_DIR = RUTA_OUTPUTS / "gradcam"
 
 
@@ -52,6 +52,7 @@ def cargar_y_preprocesar_imagen(ruta_imagen: str) -> tuple[np.ndarray, np.ndarra
     img_modelo = img_visual.astype("float32") / 255.0
     media = np.array(MEDIA_IMAGEN, dtype=np.float32)
     desv = np.array(DESV_IMAGEN, dtype=np.float32)
+
     img_modelo = (img_modelo - media) / desv
     img_modelo = np.expand_dims(img_modelo, axis=0)
 
@@ -62,6 +63,7 @@ def encontrar_ultima_capa_conv(modelo: tf.keras.Model) -> str:
     for capa in reversed(modelo.layers):
         if isinstance(capa, tf.keras.layers.Conv2D):
             return capa.name
+
     raise ValueError("No se encontró ninguna capa Conv2D en el modelo.")
 
 
@@ -72,6 +74,7 @@ def predecir_clase(
     probs = modelo.predict(img_batch, verbose=0)[0]
     idx = int(np.argmax(probs))
     etiqueta = CLAVES_CLASES[idx]
+
     return idx, etiqueta, probs
 
 
@@ -161,20 +164,12 @@ def extraer_region_principal(
     threshold: float = 0.60,
     min_area: int = 80,
 ) -> tuple[np.ndarray, tuple[int, int, int, int] | None, np.ndarray | None]:
-    """
-    Extrae la región principal de activación del heatmap:
-    - binariza con threshold
-    - busca contornos
-    - se queda con el mayor contorno válido
-
-    Devuelve:
-    - mask_binaria
-    - bounding box (x, y, w, h) o None
-    - contorno principal o None
-    """
     mask = (heatmap_resized >= threshold).astype("uint8") * 255
 
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        mask,
+        connectivity=8,
+    )
 
     if num_labels <= 1:
         return mask, None, None
@@ -184,6 +179,7 @@ def extraer_region_principal(
 
     for i in range(1, num_labels):
         area = stats[i, cv2.CC_STAT_AREA]
+
         if area >= min_area and area > mejor_area:
             mejor_area = area
             mejor_idx = i
@@ -192,7 +188,12 @@ def extraer_region_principal(
         return mask, None, None
 
     mask_principal = np.where(labels == mejor_idx, 255, 0).astype("uint8")
-    contours, _ = cv2.findContours(mask_principal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    contours, _ = cv2.findContours(
+        mask_principal,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE,
+    )
 
     if not contours:
         return mask_principal, None, None
@@ -213,7 +214,15 @@ def dibujar_bounding_box(
         return salida
 
     x, y, w, h = bbox
-    cv2.rectangle(salida, (x, y), (x + w, y + h), (255, 0, 0), 3)
+
+    cv2.rectangle(
+        salida,
+        (x, y),
+        (x + w, y + h),
+        (255, 0, 0),
+        5,
+    )
+
     return salida
 
 
@@ -226,7 +235,14 @@ def dibujar_contorno(
     if contorno is None:
         return salida
 
-    cv2.drawContours(salida, [contorno], contourIdx=-1, color=(255, 0, 0), thickness=3)
+    cv2.drawContours(
+        salida,
+        [contorno],
+        contourIdx=-1,
+        color=(255, 0, 0),
+        thickness=5,
+    )
+
     return salida
 
 
@@ -247,7 +263,7 @@ def guardar_resultados(
 
     ruta_original = carpeta / f"{nombre_base}_original.png"
     ruta_gradcam = carpeta / f"{nombre_base}_gradcam.png"
-    ruta_bbox = carpeta / f"{nombre_base}_gradcam_bbox.png"
+    ruta_bbox = carpeta / f"{nombre_base}_gradcam_bounding_box.png"
     ruta_contorno = carpeta / f"{nombre_base}_gradcam_contorno.png"
 
     guardar_imagen(ruta_original, img_original)
@@ -275,13 +291,34 @@ def guardar_txt_resultados(
             x, y, w, h = bbox
             f.write(f"Bounding box región activa: x={x}, y={y}, w={w}, h={h}\n")
         else:
-            f.write("No se detectó una región principal suficientemente grande con el threshold actual.\n")
+            f.write(
+                "No se detectó una región principal suficientemente grande "
+                "con el threshold actual.\n"
+            )
 
         f.write("\nProbabilidades por clase:\n")
         for clase, prob in zip(CLAVES_CLASES, probs):
             f.write(f"  - {clase}: {prob:.6f}\n")
 
     return ruta_txt
+
+
+def _formatear_probabilidades_panel(
+    etiqueta_predicha: str,
+    probs: np.ndarray,
+) -> str:
+    top_idxs = np.argsort(probs)[::-1][:2]
+    top_probs = [(CLAVES_CLASES[i], float(probs[i])) for i in top_idxs]
+
+    texto = (
+        r"$\bf{Clase\ predicha:}$ "
+        f"{etiqueta_predicha} | "
+        r"$\bf{Confianza\ principal:}$ "
+        f"{top_probs[0][0]} = {top_probs[0][1]:.4f} | "
+        f"2ª probabilidad: {top_probs[1][0]} = {top_probs[1][1]:.4f}"
+    )
+
+    return texto
 
 
 def guardar_panel_4_imagenes(
@@ -292,33 +329,65 @@ def guardar_panel_4_imagenes(
     img_bbox: np.ndarray,
     img_contorno: np.ndarray,
     etiqueta_predicha: str,
+    probs: np.ndarray,
 ) -> Path:
     ruta_panel = carpeta / f"{nombre_base}_panel_4imagenes.png"
 
-    fig = plt.figure(figsize=(18, 5))
+    texto_inferior = _formatear_probabilidades_panel(
+        etiqueta_predicha=etiqueta_predicha,
+        probs=probs,
+    )
 
-    plt.subplot(1, 4, 1)
-    plt.imshow(img_original)
-    plt.title("Imagen original")
-    plt.axis("off")
+    fig, axes = plt.subplots(1, 4, figsize=(28, 10.5))
 
-    plt.subplot(1, 4, 2)
-    plt.imshow(img_gradcam)
-    plt.title(f"Grad-CAM\n{etiqueta_predicha}")
-    plt.axis("off")
+    fig.suptitle(
+        "Visualización Grad-CAM de la predicción del modelo",
+        fontsize=32,
+        fontweight="bold",
+        y=0.985,
+    )
 
-    plt.subplot(1, 4, 3)
-    plt.imshow(img_bbox)
-    plt.title("Región activa (BBox)")
-    plt.axis("off")
+    imagenes = [
+        img_original,
+        img_gradcam,
+        img_bbox,
+        img_contorno,
+    ]
 
-    plt.subplot(1, 4, 4)
-    plt.imshow(img_contorno)
-    plt.title("Región activa (Contorno)")
-    plt.axis("off")
+    titulos = [
+        "Imagen original",
+        "Mapa Grad-CAM",
+        "Región activa (Bounding box)",
+        "Región activa (Contorno)",
+    ]
 
-    plt.tight_layout()
-    fig.savefig(ruta_panel, dpi=150, bbox_inches="tight")
+    for ax, imagen, titulo in zip(axes, imagenes, titulos):
+        ax.imshow(imagen)
+        ax.set_title(
+            titulo,
+            fontsize=24,
+            pad=16,
+            fontweight="bold",
+        )
+        ax.axis("off")
+
+    fig.text(
+        0.5,
+        0.045,
+        texto_inferior,
+        ha="center",
+        va="center",
+        fontsize=30,
+    )
+
+    plt.tight_layout(rect=[0, 0.10, 1, 0.91])
+
+    fig.savefig(
+        ruta_panel,
+        dpi=300,
+        bbox_inches="tight",
+    )
+
     plt.close(fig)
 
     return ruta_panel
@@ -346,40 +415,65 @@ def mostrar_resultados(
     for clase, prob in zip(CLAVES_CLASES, probs):
         print(f"  - {clase}: {prob:.6f}")
 
-    plt.figure(figsize=(18, 5))
+    texto_inferior = _formatear_probabilidades_panel(
+        etiqueta_predicha=etiqueta_predicha,
+        probs=probs,
+    )
 
-    plt.subplot(1, 4, 1)
-    plt.imshow(img_original)
-    plt.title("Imagen original")
-    plt.axis("off")
+    fig, axes = plt.subplots(1, 4, figsize=(24, 8.2))
 
-    plt.subplot(1, 4, 2)
-    plt.imshow(img_gradcam)
-    plt.title(f"Grad-CAM\n{etiqueta_predicha}")
-    plt.axis("off")
+    fig.suptitle(
+        "Visualización Grad-CAM de la predicción del modelo",
+        fontsize=26,
+        fontweight="bold",
+        y=0.98,
+    )
 
-    plt.subplot(1, 4, 3)
-    plt.imshow(img_bbox)
-    plt.title("Región activa (BBox)")
-    plt.axis("off")
+    imagenes = [
+        img_original,
+        img_gradcam,
+        img_bbox,
+        img_contorno,
+    ]
 
-    plt.subplot(1, 4, 4)
-    plt.imshow(img_contorno)
-    plt.title("Región activa (Contorno)")
-    plt.axis("off")
+    titulos = [
+        "Imagen original",
+        "Mapa Grad-CAM",
+        "Región activa (Bounding box)",
+        "Región activa (Contorno)",
+    ]
 
-    plt.tight_layout()
+    for ax, imagen, titulo in zip(axes, imagenes, titulos):
+        ax.imshow(imagen)
+        ax.set_title(
+            titulo,
+            fontsize=22,
+            pad=16,
+            fontweight="bold",
+        )
+        ax.axis("off")
+
+    fig.text(
+        0.5,
+        0.045,
+        texto_inferior,
+        ha="center",
+        va="center",
+        fontsize=20,
+    )
+
+    plt.tight_layout(rect=[0, 0.10, 1, 0.91])
     plt.show()
 
 
 def main() -> None:
-    print("=== GRAD-CAM CNN_VGG_OPT V2 ===")
+    print("=== GRAD-CAM CNN_VGG_OPTIMIZADO ===")
     print(f"Modelo esperado: {MODELO_PATH}")
 
     if not MODELO_PATH.exists():
         raise FileNotFoundError(
             f"No existe el modelo entrenado en:\n{MODELO_PATH}\n"
-            "Asegúrate de haber entrenado cnn_vgg_opt y guardado model.best.keras"
+            "Asegúrate de haber entrenado cnn_vgg_optimizado y guardado model.best.keras"
         )
 
     ruta_imagen = input("\nIntroduce la ruta completa de la imagen: ").strip().strip('"')
@@ -420,6 +514,7 @@ def main() -> None:
     img_contorno = dibujar_contorno(img_gradcam, contorno)
 
     nombre_base = Path(ruta_imagen).stem
+
     ruta_original, ruta_gradcam, ruta_bbox, ruta_contorno, carpeta = guardar_resultados(
         nombre_base=nombre_base,
         img_original=img_original,
@@ -444,6 +539,7 @@ def main() -> None:
         img_bbox=img_bbox,
         img_contorno=img_contorno,
         etiqueta_predicha=etiqueta_predicha,
+        probs=probs,
     )
 
     mostrar_resultados(
@@ -457,12 +553,12 @@ def main() -> None:
     )
 
     print("\n✅ Resultados guardados en:")
-    print(f" - Original:  {ruta_original}")
-    print(f" - Grad-CAM:  {ruta_gradcam}")
-    print(f" - BBox:      {ruta_bbox}")
-    print(f" - Contorno:  {ruta_contorno}")
-    print(f" - Panel:     {ruta_panel}")
-    print(f" - TXT:       {ruta_txt}")
+    print(f" - Original:      {ruta_original}")
+    print(f" - Grad-CAM:      {ruta_gradcam}")
+    print(f" - Bounding box:  {ruta_bbox}")
+    print(f" - Contorno:      {ruta_contorno}")
+    print(f" - Panel:         {ruta_panel}")
+    print(f" - TXT:           {ruta_txt}")
 
 
 if __name__ == "__main__":

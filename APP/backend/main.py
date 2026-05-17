@@ -34,19 +34,25 @@ app.add_middleware(
 # =========================================================
 # ARCHIVOS ESTÁTICOS
 # =========================================================
-app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR), name="frontend")
+if FRONTEND_DIR.exists():
+    app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR), name="frontend")
+
 app.mount(
     "/static/imagenes_entrada",
     StaticFiles(directory=IMAGENES_ENTRADA_DIR),
     name="imagenes_entrada",
 )
+
 app.mount("/static/resultados", StaticFiles(directory=RESULTADOS_DIR), name="resultados")
+
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
-app.mount(
-    "/static/interpretabilidad",
-    StaticFiles(directory=MODELOS_RNA_DIR),
-    name="interpretabilidad",
-)
+
+if MODELOS_RNA_DIR.exists():
+    app.mount(
+        "/static/interpretabilidad",
+        StaticFiles(directory=MODELOS_RNA_DIR),
+        name="interpretabilidad",
+    )
 
 
 # =========================================================
@@ -76,9 +82,11 @@ def obtener_imagenes_validas() -> list[str]:
 @app.get("/")
 def inicio():
     ruta_index = FRONTEND_DIR / "index.html"
-    if not ruta_index.exists():
-        raise HTTPException(status_code=404, detail="No se encontró frontend/index.html")
-    return FileResponse(ruta_index)
+
+    if ruta_index.exists():
+        return FileResponse(ruta_index)
+
+    return {"status": "Backend TFG funcionando correctamente"}
 
 
 # =========================================================
@@ -87,8 +95,13 @@ def inicio():
 @app.get("/favicon.ico")
 def favicon():
     ruta_favicon = ASSETS_DIR / "flavicon.png"
+
     if not ruta_favicon.exists():
-        raise HTTPException(status_code=404, detail="No se encontró assets/flavicon.png")
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontró assets/flavicon.png"
+        )
+
     return FileResponse(ruta_favicon)
 
 
@@ -98,6 +111,7 @@ def favicon():
 @app.get("/imagenes_disponibles")
 def listar_imagenes():
     imagenes = obtener_imagenes_validas()
+
     return {
         "carpeta": str(IMAGENES_ENTRADA_DIR),
         "total": len(imagenes),
@@ -110,16 +124,26 @@ def listar_imagenes():
 # =========================================================
 @app.post("/analizar")
 def analizar_imagen(req: ImagenRequest):
+
     ruta_imagen = IMAGENES_ENTRADA_DIR / req.nombre_imagen
 
     if not ruta_imagen.exists():
-        raise HTTPException(status_code=404, detail=f"Imagen no encontrada: {req.nombre_imagen}")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagen no encontrada: {req.nombre_imagen}"
+        )
 
     if req.nombre_imagen in ARCHIVOS_EXCLUIDOS:
-        raise HTTPException(status_code=400, detail="Ese archivo no es una muestra válida")
+        raise HTTPException(
+            status_code=400,
+            detail="Ese archivo no es una muestra válida"
+        )
 
     if ruta_imagen.suffix.lower() not in EXTENSIONES_VALIDAS:
-        raise HTTPException(status_code=400, detail="Formato de imagen no permitido")
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de imagen no permitido"
+        )
 
     resultado_pred = predecir_imagen(ruta_imagen)
 
@@ -152,12 +176,21 @@ def analizar_imagen(req: ImagenRequest):
 # =========================================================
 @app.get("/perfil_rna/{prediccion_clave}")
 def perfil_rna(prediccion_clave: str):
-    claves_validas = ["lung_aca", "lung_scc", "colon_aca", "lung_n", "colon_n"]
+
+    claves_validas = [
+        "lung_aca",
+        "lung_scc",
+        "colon_aca",
+        "lung_n",
+        "colon_n",
+    ]
+
     if prediccion_clave not in claves_validas:
         raise HTTPException(
             status_code=400,
             detail=f"Clave no válida: {prediccion_clave}"
         )
+
     return obtener_perfil_rna(prediccion_clave)
 
 
@@ -166,11 +199,20 @@ def perfil_rna(prediccion_clave: str):
 # =========================================================
 @app.get("/test")
 def test_rapido():
+
     imagenes = obtener_imagenes_validas()
+
     if not imagenes:
-        raise HTTPException(status_code=404, detail="No hay imágenes válidas en imagenes_entrada")
+        raise HTTPException(
+            status_code=404,
+            detail="No hay imágenes válidas en imagenes_entrada"
+        )
+
     nombre = imagenes[0]
-    return analizar_imagen(ImagenRequest(nombre_imagen=nombre))
+
+    return analizar_imagen(
+        ImagenRequest(nombre_imagen=nombre)
+    )
 
 
 # =========================================================
@@ -178,4 +220,6 @@ def test_rapido():
 # =========================================================
 @app.get("/test/{nombre_imagen}")
 def test_imagen(nombre_imagen: str):
-    return analizar_imagen(ImagenRequest(nombre_imagen=nombre_imagen))
+    return analizar_imagen(
+        ImagenRequest(nombre_imagen=nombre_imagen)
+    )

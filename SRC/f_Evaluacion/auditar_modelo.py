@@ -32,9 +32,9 @@ from b_Preprocesado.preprocess import crear_dataset_tf
 # =========================================================
 # CONFIG FIJA
 # =========================================================
-MODEL_NAME = "cnn_vgg_opt"
+MODEL_NAME = "cnn_vgg_optimizado"
 MODEL_FILENAME = "model.best.keras"
-AUDIT_FOLDER_NAME = "cnn_vgg_opt"
+AUDIT_FOLDER_NAME = "cnn_vgg_optimizado"
 
 
 # =========================================================
@@ -155,6 +155,7 @@ def _analizar_solapes_por_nombre(train_df, val_df, test_df, col_ruta):
 
 def _analizar_duplicados_binarios(train_df, val_df, test_df, col_ruta):
     print("\n🔍 Calculando hashes SHA256 para detectar duplicados exactos entre splits...")
+
     train_paths = [str(Path(x)) for x in train_df[col_ruta].tolist()]
     val_paths = [str(Path(x)) for x in val_df[col_ruta].tolist()]
     test_paths = [str(Path(x)) for x in test_df[col_ruta].tolist()]
@@ -205,10 +206,13 @@ def _analizar_duplicados_binarios(train_df, val_df, test_df, col_ruta):
 
 def _crear_dataset_desde_df(df, col_ruta, col_etiqueta, batch_size=32, cache=False):
     df_tmp = df[[col_ruta, col_etiqueta]].copy()
-    df_tmp = df_tmp.rename(columns={
-        col_ruta: "filepath",
-        col_etiqueta: "label",
-    })
+
+    df_tmp = df_tmp.rename(
+        columns={
+            col_ruta: "filepath",
+            col_etiqueta: "label",
+        }
+    )
 
     etiquetas_raw = df_tmp["label"].tolist()
 
@@ -232,6 +236,7 @@ def _crear_dataset_desde_df(df, col_ruta, col_etiqueta, batch_size=32, cache=Fal
 
 def _evaluar_split(model, ds, y_true, nombre_split):
     print(f"\n📊 Evaluando split: {nombre_split} ...")
+
     y_prob = model.predict(ds, verbose=1)
     y_pred = np.argmax(y_prob, axis=1)
 
@@ -251,21 +256,60 @@ def _evaluar_split(model, ds, y_true, nombre_split):
 
 
 def _guardar_grafica_overfitting(resultados, save_path):
-    splits = [r["split"] for r in resultados]
+    etiquetas = {
+        "train": "Entrenamiento",
+        "val": "Validación",
+        "test": "Prueba",
+    }
+
+    splits = [etiquetas.get(r["split"], r["split"]) for r in resultados]
     accs = [r["accuracy"] for r in resultados]
 
     plt.figure(figsize=(8, 5))
-    plt.bar(splits, accs)
-    plt.ylim(0, 1)
-    plt.title("Comparación de accuracy por split")
-    plt.ylabel("Accuracy")
-    plt.xlabel("Split")
+
+    plt.bar(
+        splits,
+        accs,
+        edgecolor="black",
+        linewidth=0.8,
+    )
+
+    plt.ylim(0.98, 1.00)
+
+    plt.title(
+        "Comparación de accuracy entre subconjuntos",
+        fontsize=14,
+        fontweight="bold",
+        pad=12,
+    )
+
+    plt.ylabel("Accuracy", fontsize=11)
+    plt.xlabel("Subconjunto", fontsize=11)
+
+    plt.grid(
+        axis="y",
+        linestyle="--",
+        alpha=0.3,
+    )
 
     for i, v in enumerate(accs):
-        plt.text(i, min(v + 0.02, 0.98), f"{v:.4f}", ha="center")
+        plt.text(
+            i,
+            v + 0.00025,
+            f"{v:.4f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+        )
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=200, bbox_inches="tight")
+
+    plt.savefig(
+        save_path,
+        dpi=300,
+        bbox_inches="tight",
+    )
+
     plt.close()
 
 
@@ -316,23 +360,22 @@ def _interpretar_riesgo_overfitting(train_acc, val_acc, test_acc):
 # =========================================================
 def main():
     parser = argparse.ArgumentParser(
-        description="Auditoría de leakage y overfitting para cnn_vgg_opt"
+        description="Auditoría de leakage y overfitting para cnn_vgg_optimizado"
     )
+
     parser.add_argument("--batch_size", type=int, default=BATCH_SIZE)
     parser.add_argument("--cache", action="store_true")
     parser.add_argument(
         "--model_path",
         type=str,
         default="",
-        help=f"Ruta manual al modelo .keras. Si se deja vacío, usa MODELOS_DIR/{MODEL_NAME}/{MODEL_FILENAME}"
+        help=f"Ruta manual al modelo .keras. Si se deja vacío, usa MODELOS_DIR/{MODEL_NAME}/{MODEL_FILENAME}",
     )
+
     args = parser.parse_args()
 
     fijar_seed()
 
-    # -----------------------------------------------------
-    # Cargar splits
-    # -----------------------------------------------------
     print("\n📦 Cargando splits...")
     train_df, val_df, test_df = get_splits()
 
@@ -346,31 +389,36 @@ def main():
     print(f"✅ Val samples:   {len(val_df)}")
     print(f"✅ Test samples:  {len(test_df)}")
 
-    # -----------------------------------------------------
-    # Auditoría de leakage
-    # -----------------------------------------------------
     print("\n🔎 Auditando posibles fugas de datos...")
     overlap_paths = _analizar_solapes_por_ruta(train_df, val_df, test_df, col_ruta)
     overlap_names = _analizar_solapes_por_nombre(train_df, val_df, test_df, col_ruta)
     exact_dups = _analizar_duplicados_binarios(train_df, val_df, test_df, col_ruta)
 
-    # -----------------------------------------------------
-    # Cargar datasets
-    # -----------------------------------------------------
     print("\n🧪 Construyendo datasets de evaluación...")
     train_ds, y_train = _crear_dataset_desde_df(
-        train_df, col_ruta, col_etiqueta, batch_size=args.batch_size, cache=args.cache
-    )
-    val_ds, y_val = _crear_dataset_desde_df(
-        val_df, col_ruta, col_etiqueta, batch_size=args.batch_size, cache=args.cache
-    )
-    test_ds, y_test = _crear_dataset_desde_df(
-        test_df, col_ruta, col_etiqueta, batch_size=args.batch_size, cache=args.cache
+        train_df,
+        col_ruta,
+        col_etiqueta,
+        batch_size=args.batch_size,
+        cache=args.cache,
     )
 
-    # -----------------------------------------------------
-    # Cargar modelo
-    # -----------------------------------------------------
+    val_ds, y_val = _crear_dataset_desde_df(
+        val_df,
+        col_ruta,
+        col_etiqueta,
+        batch_size=args.batch_size,
+        cache=args.cache,
+    )
+
+    test_ds, y_test = _crear_dataset_desde_df(
+        test_df,
+        col_ruta,
+        col_etiqueta,
+        batch_size=args.batch_size,
+        cache=args.cache,
+    )
+
     if args.model_path.strip():
         model_path = Path(args.model_path)
     else:
@@ -382,9 +430,6 @@ def main():
     print(f"\n🧠 Cargando modelo desde: {model_path}")
     model = tf.keras.models.load_model(model_path)
 
-    # -----------------------------------------------------
-    # Evaluar splits
-    # -----------------------------------------------------
     resultados = []
     resultados.append(_evaluar_split(model, train_ds, y_train, "train"))
     resultados.append(_evaluar_split(model, val_ds, y_val, "val"))
@@ -396,15 +441,9 @@ def main():
 
     overfitting = _interpretar_riesgo_overfitting(train_acc, val_acc, test_acc)
 
-    # -----------------------------------------------------
-    # Carpeta de salida
-    # -----------------------------------------------------
     audit_dir = RUTA_OUTPUTS / "Auditacion" / AUDIT_FOLDER_NAME
     audit_dir.mkdir(parents=True, exist_ok=True)
 
-    # -----------------------------------------------------
-    # Guardar única gráfica
-    # -----------------------------------------------------
     plot_path = audit_dir / "comparacion_accuracy_splits.png"
     _guardar_grafica_overfitting(resultados, plot_path)
 
@@ -421,12 +460,10 @@ def main():
     )
 
     possible_overfitting = bool(
-        overfitting["train_val_gap"] > 0.05 or overfitting["train_test_gap"] > 0.05
+        overfitting["train_val_gap"] > 0.05
+        or overfitting["train_test_gap"] > 0.05
     )
 
-    # -----------------------------------------------------
-    # Resumen final
-    # -----------------------------------------------------
     resumen = {
         "model_name": MODEL_NAME,
         "model_path": str(model_path),
@@ -479,9 +516,6 @@ def main():
         encoding="utf-8",
     )
 
-    # -----------------------------------------------------
-    # Print final
-    # -----------------------------------------------------
     print("\n" + "=" * 70)
     print("✅ AUDITORÍA FINALIZADA")
     print("=" * 70)
